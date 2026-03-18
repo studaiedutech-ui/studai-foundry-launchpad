@@ -3,7 +3,7 @@
 # ============================================================
 # PURPOSE:
 #   This file is the user interface ONLY. It renders the Streamlit
-#   web app with step cards, a log box, and the final brief output.
+#   web app with step cards, a log box, and the final CP1 draft.
 #   All agent logic lives in agent/loop.py — this file just handles
 #   display and user input.
 #
@@ -30,7 +30,7 @@ load_dotenv()
 
 # ── PAGE CONFIG ──────────────────────────────────────────────────
 st.set_page_config(
-    page_title="StudAI LaunchPad — Autonomous Agent Workshop",
+    page_title="StudAI LaunchPad — CP1 Submission Drafter",
     page_icon="🚀",
     layout="centered",
 )
@@ -129,17 +129,6 @@ st.markdown("""
         letter-spacing: 0.5px;
     }
 
-    /* Autonomy explainer */
-    .autonomy-box {
-        background: linear-gradient(135deg, #f5f3ff, #ede9fe);
-        border: 1px solid #c4b5fd;
-        border-radius: 10px;
-        padding: 16px;
-        margin: 8px 0 16px 0;
-        font-size: 0.92em;
-    }
-    .autonomy-box h4 { margin: 0 0 8px 0; color: #5b21b6; }
-
     /* Loop counter */
     .loop-counter {
         text-align: center;
@@ -158,7 +147,7 @@ st.markdown("""
 # ── HEADER & BRANDING ───────────────────────────────────────────
 st.markdown('<div class="brand-title">StudAI LaunchPad</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="brand-sub">Startup Idea Validator — Autonomous AI Agent</div>',
+    '<div class="brand-sub">CP1 Submission Drafter — Autonomous AI Agent</div>',
     unsafe_allow_html=True,
 )
 st.markdown(
@@ -179,11 +168,11 @@ with st.expander("🤖 What makes this AUTONOMOUS (not a chatbot)?", expanded=Fa
 |------|-------------------|---------------|
 | **THINK** | Parses the goal + any feedback from previous attempts | Context awareness — like re-reading a brief before starting |
 | **PLAN** | Asks the LLM to create a JSON action plan | Self-directed — it decides *what* to do, not you |
-| **EXECUTE** | Runs each tool in sequence (research → score → write) | Tool use — each tool does one job, outputs chain together |
-| **REVIEW** | Scores its own output 1-10 against quality criteria | **Self-evaluation — THIS is what makes it autonomous** |
+| **EXECUTE** | Runs each tool in sequence (define → architect → write) | Tool use — each tool does one job, outputs chain together |
+| **REVIEW** | Scores its own output 1-10 against CP1 criteria | **Self-evaluation — THIS is what makes it autonomous** |
 | **UPDATE** | If score < 7, carries feedback into the next loop | Self-correction — it learns from its own mistakes |
 
-The loop runs up to **3 times**. Each retry uses specific feedback to improve. This is the exact same architecture used in production AI agents at companies — the domain changes, the loop doesn't.
+The loop runs up to **3 times**. Each retry uses specific feedback to improve. This is the exact same architecture used in production AI agents — the domain changes, the loop doesn't.
 
 > **The one rule: THE LOOP NEVER CHANGES. THE TOOLS DO.**
 >
@@ -217,11 +206,16 @@ with st.sidebar:
     - `loop.py` — Runs the 5-step cycle (NEVER changes)
     - `planner.py` — LLM → JSON action plan
     - `executor.py` — Routes plan → tool functions
-    - `reviewer.py` — Scores output, decides retry
-    - `tools/` — The actual domain work (THESE change)
+    - `reviewer.py` — Scores output against CP1 rubric
+    - `tools/` — The domain-specific work (THESE change)
+
+    **The 3 tools in this agent:**
+    1. `problem_definer` — Extracts the core problem
+    2. `solution_architect` — Designs the solution + build plan
+    3. `submission_writer` — Writes the CP1 draft
 
     **Why this is autonomous:**
-    The **reviewer** is the key. It judges the agent's own output and decides "good enough" or "try again with this feedback." A chatbot skips this entirely.
+    The **reviewer** scores the draft against actual CP1 criteria. If it's not good enough, it tells the agent *what* to improve — and the agent tries again.
     """)
 
     st.divider()
@@ -237,9 +231,9 @@ with st.sidebar:
 
 # ── MAIN AREA — INPUT ────────────────────────────────────────────
 idea = st.text_area(
-    "Enter your startup idea",
-    placeholder="Example: An AI-powered app that helps college students in India find and apply for scholarships matching their profile, grades, and financial background — using WhatsApp as the primary interface.",
-    height=120,
+    "Describe your Foundry hackathon idea",
+    placeholder="Example: An AI agent that helps small restaurant owners in India manage their daily inventory by scanning purchase bills via WhatsApp, predicting demand for the next 3 days, and auto-generating purchase orders for suppliers.",
+    height=130,
 )
 
 # ── PRE-FILLED EXAMPLE BUTTON ───────────────────────────────────
@@ -248,14 +242,15 @@ idea = st.text_area(
 # lets everyone see the loop running within 10 seconds.
 col_run, col_example = st.columns([3, 1])
 with col_run:
-    run_button = st.button("🚀 Run Validator", use_container_width=True, type="primary")
+    run_button = st.button("🚀 Draft My CP1 Submission", use_container_width=True, type="primary")
 with col_example:
     if st.button("💡 Try Example", use_container_width=True):
         st.session_state["example_idea"] = (
-            "An AI tutor app for engineering students in India that creates "
+            "An AI tutor agent for engineering students in India that creates "
             "personalised study plans based on their semester syllabus, past "
             "exam papers, and weak topics — delivered via WhatsApp with daily "
-            "15-minute micro-lessons and practice questions."
+            "15-minute micro-lessons and practice questions. The agent autonomously "
+            "adjusts difficulty based on quiz performance."
         )
         st.rerun()
 
@@ -264,9 +259,9 @@ with col_example:
 if "example_idea" in st.session_state:
     idea = st.session_state.pop("example_idea")
     st.text_area(
-        "Enter your startup idea",
+        "Describe your Foundry hackathon idea",
         value=idea,
-        height=120,
+        height=130,
         key="idea_filled",
         label_visibility="collapsed",
     )
@@ -291,13 +286,11 @@ STEP_ICONS = {
 STEP_LABELS = ["THINK", "PLAN", "EXECUTE", "REVIEW", "UPDATE"]
 STEP_KEYS = ["think", "plan", "execute", "review", "update"]
 
-# Why these descriptions exist: students watching the live demo need
-# to understand what each step does as it lights up
 STEP_DESCRIPTIONS = {
     "think": "Parse goal",
     "plan": "Create plan",
     "execute": "Run tools",
-    "review": "Score output",
+    "review": "Score draft",
     "update": "Self-correct",
 }
 
@@ -329,12 +322,11 @@ def format_log(message):
     ts = datetime.datetime.now().strftime("%H:%M:%S")
     time_span = f'<span class="log-time">[{ts}]</span>'
 
-    # Color-code different types of log messages
     if message.startswith("═══"):
         return f'{time_span} <span class="log-loop">{message}</span>'
     elif "Running tool:" in message:
         return f'{time_span} <span class="log-tool">{message}</span>'
-    elif "PASSED" in message or "passed" in message.lower() and "success" in message.lower():
+    elif "PASSED" in message or ("passed" in message.lower() and "success" in message.lower()):
         return f'{time_span} <span class="log-pass">{message}</span>'
     elif "FAILED" in message or "failed" in message.lower():
         return f'{time_span} <span class="log-fail">{message}</span>'
@@ -353,16 +345,15 @@ if run_button:
         st.stop()
 
     if not idea.strip():
-        st.error("⚠️ **No idea entered.** Type a startup idea above, or click **💡 Try Example** for a demo.")
+        st.error("⚠️ **No idea entered.** Describe your hackathon idea above, or click **💡 Try Example** for a demo.")
         st.stop()
 
     # ── INITIALISE STATE ─────────────────────────────────────────
     client = Groq(api_key=api_key)
     statuses = {key: "pending" for key in STEP_KEYS}
     log_lines = []
-    current_loop = [1]  # mutable container so callbacks can update it
+    current_loop = [1]
 
-    # Render initial state
     render_steps(statuses, step_container)
     log_header.markdown("### 📋 Activity Log")
 
@@ -374,7 +365,6 @@ if run_button:
 
     def on_log(message):
         """Append a timestamped log line and re-render the log box."""
-        # Detect loop counter updates from the agent
         if message.startswith("═══ Loop"):
             try:
                 loop_num = int(message.split("Loop ")[1].split(" ")[0])
@@ -388,7 +378,6 @@ if run_button:
                 pass
 
         log_lines.append(format_log(message))
-        # Show only the last 12 lines to keep the box readable
         visible = log_lines[-12:]
         log_html = "\n".join(visible)
         log_container.markdown(
@@ -397,7 +386,7 @@ if run_button:
         )
 
     # ── RUN THE LOOP ─────────────────────────────────────────────
-    with st.spinner("🤖 Agent is working autonomously — watch the steps light up..."):
+    with st.spinner("🤖 Agent is drafting your CP1 submission autonomously — watch the steps light up..."):
         try:
             results = loop.run(idea, client, model, on_step, on_log)
         except Exception as e:
@@ -421,54 +410,54 @@ if run_button:
     # ── DISPLAY RESULTS ──────────────────────────────────────────
     st.divider()
 
-    st.markdown("## ✅ Validation Brief")
+    st.markdown("## 📋 Your CP1 Submission Draft")
 
-    if results.get("brief_writer"):
-        st.markdown(results["brief_writer"])
+    if results.get("submission_writer"):
+        st.markdown(results["submission_writer"])
 
         # ── DOWNLOAD BUTTON ──────────────────────────────────────
-        # Why this exists: students love saving their output to share
-        # with teammates or include in their Foundry submission
         st.download_button(
-            label="📥 Download Brief as Markdown",
-            data=results["brief_writer"],
-            file_name="startup-validation-brief.md",
+            label="📥 Download CP1 Draft as Markdown",
+            data=results["submission_writer"],
+            file_name="studai-foundry-cp1-draft.md",
             mime="text/markdown",
             use_container_width=True,
         )
     else:
-        st.warning("No brief was generated. Check the activity log above for errors.")
+        st.warning("No draft was generated. Check the activity log above for errors.")
 
     with st.expander("🔍 Raw tool outputs (for learning)"):
-        st.markdown("**Why look at these?** Each tool produces one piece of the analysis. "
-                     "The brief_writer *synthesises* them all. Understanding this chain is "
+        st.markdown("**Why look at these?** Each tool produces one piece of the submission. "
+                     "The submission_writer *synthesises* them all. Understanding this chain is "
                      "key to building your own autonomous agent.")
         st.markdown("---")
-        st.markdown("### Tool 1: Market Research")
-        st.markdown(results.get("market_research", "*Not generated*"))
+        st.markdown("### Tool 1: Problem Definition")
+        st.markdown(results.get("problem_definer", "*Not generated*"))
         st.markdown("---")
-        st.markdown("### Tool 2: Feasibility Scores")
-        st.markdown(results.get("feasibility", "*Not generated*"))
+        st.markdown("### Tool 2: Solution Architecture")
+        st.markdown(results.get("solution_architect", "*Not generated*"))
 
     # ── POST-RUN EDUCATION ───────────────────────────────────────
     with st.expander("🎓 What just happened? (The autonomy explained)"):
         loops_used = current_loop[0]
         st.markdown(f"""
-**The agent ran {loops_used} loop{'s' if loops_used > 1 else ''}** to validate your idea. Here's what happened at each step:
+**The agent ran {loops_used} loop{'s' if loops_used > 1 else ''}** to draft your CP1 submission. Here's what happened at each step:
 
 1. **THINK** — The agent parsed your idea as its goal. On retries, it also incorporated specific feedback from the reviewer about what to improve.
 
 2. **PLAN** — The agent asked the LLM to create a JSON execution plan: *which tools to run and in what order*. The agent decided its own workflow — you didn't tell it what to do step by step.
 
 3. **EXECUTE** — The agent ran 3 tools in sequence. Each tool's output became input for the next one (this is called *information chaining*):
-   - Market Research → produced customer & market data
-   - Feasibility → used that data to score 5 dimensions
-   - Brief Writer → synthesised everything into a final brief
+   - **Problem Definer** → extracted target users, pain point, urgency, alternatives
+   - **Solution Architect** → used that analysis to design the solution, tech stack, and build plan
+   - **Submission Writer** → synthesised everything into a formatted CP1 draft
 
-4. **REVIEW** — **This is the key step.** The agent scored its OWN output on a 1-10 scale. If the score was below 7, it decided the output wasn't good enough. A chatbot would have just returned it. An autonomous agent judges itself.
+4. **REVIEW** — **This is the key step.** The agent scored its OWN draft against StudAI Foundry's CP1 criteria. If the score was below 7, it decided the draft wasn't submission-ready. A chatbot would have just returned it. An autonomous agent judges itself.
 
-5. **UPDATE** — If the review failed, the agent extracted specific feedback ("needs more concrete market numbers", "risks are too generic") and carried it into the next loop to improve.
+5. **UPDATE** — If the review failed, the agent extracted specific feedback ("autonomy section is too vague", "build plan is unrealistic") and carried it into the next loop to improve.
 
 **This is the difference between a chatbot and an autonomous agent:**
-A chatbot gives you one answer. An agent gives you its *best* answer — and keeps improving until it's good enough.
+A chatbot gives you one draft. An agent gives you its *best* draft — and keeps improving until it meets the quality bar.
+
+**Next step:** Copy this draft, refine it with your team, and submit before the CP1 deadline!
         """)

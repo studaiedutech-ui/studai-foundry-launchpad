@@ -1,4 +1,4 @@
-# 🚀 StudAI LaunchPad — Startup Idea Validator
+# 🚀 StudAI LaunchPad — CP1 Submission Drafter
 
 > **The official workshop product for [StudAI Foundry](https://studai.one) — India's national autonomous AI systems hackathon**
 >
@@ -15,7 +15,7 @@
   ║      ╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝               ║
   ║                                                                   ║
   ║              L A U N C H P A D                                    ║
-  ║       Startup Idea Validator — Autonomous AI Agent                ║
+  ║       CP1 Submission Drafter — Autonomous AI Agent                ║
   ║                                                                   ║
   ╚═══════════════════════════════════════════════════════════════════╝
 ```
@@ -41,17 +41,17 @@
 
 ## 🧠 What Is This?
 
-This is an **autonomous AI agent** that validates startup ideas. You give it one input — your startup idea. The agent does the rest:
+This is an **autonomous AI agent** that drafts your **CP1 (Checkpoint 1) submission** for the StudAI Foundry hackathon. You give it one input — your project idea. The agent does the rest:
 
-1. **Researches** your target market and customers
-2. **Scores** the idea on 5 feasibility dimensions
-3. **Writes** a structured validation brief with a verdict
-4. **Reviews** its own output quality (scores it 1-10)
-5. **Self-corrects** if the quality isn't good enough — and tries again
+1. **Defines** the core problem, target users, urgency, and current alternatives
+2. **Architects** the solution with autonomy angle, tech stack, and 10-day build plan
+3. **Writes** a formatted CP1 submission draft matching Foundry's criteria
+4. **Reviews** its own draft against the CP1 rubric (scores it 1-10)
+5. **Self-corrects** if the draft isn't submission-ready — and tries again
 
-The final output is a downloadable markdown brief with a verdict: **STRONG IDEA** / **NEEDS REFINEMENT** / **PIVOT RECOMMENDED**.
+The final output is a downloadable **CP1 submission draft** you can refine with your team and submit before the March 23 deadline.
 
-> **This was built for the StudAI LaunchPad workshop** — the official kickoff of StudAI Foundry, India's national autonomous AI hackathon. Students clone this repo, run it, watch the autonomous loop execute live, then use AI coding tools (GitHub Copilot / Claude Code) to modify it for their own hackathon project.
+> **This was built for the StudAI LaunchPad workshop** — the official kickoff of StudAI Foundry, India's national autonomous AI hackathon. Students clone this repo, run it, watch the autonomous loop draft their CP1 live, then use AI coding tools (GitHub Copilot / Claude Code) to modify it for their own hackathon project.
 
 ---
 
@@ -144,7 +144,7 @@ This is the core concept taught in the workshop. Understanding this difference i
 |------|-------------|---------------|
 | **THINK** | Parses the startup idea + any feedback from previous loops | The agent builds context before acting — just like re-reading a brief before starting work |
 | **PLAN** | LLM generates a JSON action plan: `[{step, tool, reason}]` | The agent decides **what** to do — you don't tell it step by step. That's self-direction. |
-| **EXECUTE** | Runs 3 tools in sequence: market research → feasibility → brief | Each tool's output feeds into the next one. This is **information chaining**. |
+| **EXECUTE** | Runs 3 tools in sequence: problem definer → solution architect → submission writer | Each tool's output feeds into the next one. This is **information chaining**. |
 | **REVIEW** | Scores the output 1-10 against quality criteria | **This is autonomy.** The agent judges its own work. A chatbot skips this entirely. |
 | **UPDATE** | Carries specific feedback into the next loop | Not blind retry — **directed self-correction** with concrete improvements. |
 
@@ -174,9 +174,9 @@ This is the core concept taught in the workshop. Understanding this difference i
       │
       └── 🔧 tools/             ← DOMAIN-SPECIFIC TOOLS (these change)
           ├── __init__.py
-          ├── market_research.py ← Tool 1: customers, market, problem
-          ├── feasibility.py     ← Tool 2: 5-dimension scoring
-          └── brief_writer.py    ← Tool 3: final validation brief
+          ├── problem_definer.py   ← Tool 1: users, pain point, urgency
+          ├── solution_architect.py← Tool 2: solution, tech stack, build plan
+          └── submission_writer.py ← Tool 3: formatted CP1 draft
 ```
 
 ### How Data Flows Through the System
@@ -185,7 +185,7 @@ This is the core concept taught in the workshop. Understanding this difference i
   ┌──────────────┐
   │   User       │
   │   enters     │
-  │   startup    │
+  │   hackathon  │
   │   idea       │
   └──────┬───────┘
          │
@@ -209,19 +209,19 @@ This is the core concept taught in the workshop. Understanding this difference i
                            ▼               ▼               ▼
                     ┌────────────┐  ┌────────────┐  ┌────────────┐
                     │  Tool 1    │  │  Tool 2    │  │  Tool 3    │
-                    │  market_   │  │ feasibi-   │  │  brief_    │
-                    │  research  │──→│  lity      │──→│  writer    │
+                    │  problem_  │  │ solution_  │  │ submission │
+                    │  definer   │──→│ architect  │──→│ _writer    │
                     │            │  │            │  │            │
-                    │ Customers  │  │ 5 scores   │  │ Final      │
-                    │ Market size│  │ 1-10 each  │  │ markdown   │
-                    │ Problem    │  │            │  │ brief +    │
-                    │ Alternatives│  │            │  │ verdict    │
+                    │ Target     │  │ Solution   │  │ Formatted  │
+                    │ users,     │  │ design,    │  │ CP1 draft  │
+                    │ pain point │  │ tech stack │  │ ready to   │
+                    │ urgency    │  │ build plan │  │ submit     │
                     └────────────┘  └────────────┘  └────────────┘
                                                           │
                                                           ▼
                                                    ┌────────────┐
-                                                   │  User sees │
-                                                   │  the brief │
+                                                   │  User gets │
+                                                   │  CP1 draft │
                                                    │  + download│
                                                    └────────────┘
 ```
@@ -229,22 +229,22 @@ This is the core concept taught in the workshop. Understanding this difference i
 ### Information Chaining Between Tools
 
 ```
-  Tool 1: market_research
+  Tool 1: problem_definer
     Input:  idea
-    Output: customers, market size, problem, alternatives
+    Output: target users, pain point, urgency, current alternatives
               │
               ▼
-  Tool 2: feasibility
-    Input:  idea + market_research output
-    Output: 5 scores (technical, market, revenue, competition, founder)
+  Tool 2: solution_architect
+    Input:  idea + problem_definer output
+    Output: solution design, autonomy angle, tech stack, 10-day build plan
               │
               ▼
-  Tool 3: brief_writer
-    Input:  idea + market_research output + feasibility output
-    Output: Structured markdown brief with verdict
+  Tool 3: submission_writer
+    Input:  idea + problem_definer output + solution_architect output
+    Output: Formatted CP1 submission draft
 ```
 
-> **Why this order matters:** Each tool builds on the previous one's output. Feasibility scoring is more accurate when grounded in real market research. The brief is better when it can reference both the research AND the scores. This is called **information chaining** — and it's how production AI agents work.
+> **Why this order matters:** Each tool builds on the previous one's output. The solution architecture is more grounded when it's based on a clear problem definition. The CP1 draft is stronger when it can reference both the problem analysis AND the solution design. This is called **information chaining** — and it's how production AI agents work.
 
 ---
 
@@ -337,7 +337,7 @@ The app opens automatically in your browser at **http://localhost:8501**.
   │  │  │  Enter your startup idea...                 │  │  │
   │  │  └─────────────────────────────────────────────┘  │  │
   │  │                                                   │  │
-  │  │  [🚀 Run Validator]            [💡 Try Example]   │  │
+  │  │  [🚀 Draft My CP1]            [💡 Try Example]   │  │
   │  │                                                   │  │
   │  │  ┌───────┬───────┬────────┬───────┬───────┐       │  │
   │  │  │ THINK │ PLAN  │EXECUTE │REVIEW │UPDATE │       │  │
@@ -349,7 +349,7 @@ The app opens automatically in your browser at **http://localhost:8501**.
   │  │  │  [HH:MM:SS] ═══ Loop 1 of 3 ═══            │  │  │
   │  │  │  [HH:MM:SS] Parsing goal: AI tutor app...   │  │  │
   │  │  │  [HH:MM:SS] Plan created with 3 steps       │  │  │
-  │  │  │  [HH:MM:SS] Running tool: market_research   │  │  │
+  │  │  │  [HH:MM:SS] Running tool: problem_definer     │  │  │
   │  │  │  ...                                        │  │  │
   │  │  └─────────────────────────────────────────────┘  │  │
   │  └───────────────────────────────────────────────────┘  │
@@ -360,7 +360,7 @@ The app opens automatically in your browser at **http://localhost:8501**.
 
 1. **Paste your Groq API key** in the sidebar (or set it in `.env`)
 2. **Type a startup idea** in the text box — be specific! (or click **💡 Try Example**)
-3. **Click 🚀 Run Validator** — watch the 5 step cards light up in real time
+3. **Click 🚀 Draft My CP1** — watch the 5 step cards light up in real time
 4. **Read the final brief** — it appears below with a verdict
 5. **Download** the brief as a markdown file using the download button
 
@@ -368,7 +368,7 @@ The app opens automatically in your browser at **http://localhost:8501**.
 
 ## 👀 What You Will See
 
-When you click **Run Validator**, the agent works autonomously:
+When you click **Draft My CP1**, the agent works autonomously:
 
 ### Step Cards Light Up in Real Time
 
@@ -394,16 +394,17 @@ When you click **Run Validator**, the agent works autonomously:
 
 ### Final Output
 
-A structured **Startup Validation Brief** with:
+A structured **CP1 Submission Draft** with:
 
-- **The Idea** — one sentence summary
-- **Target Customer** — who exactly will use this
-- **Problem Being Solved** — the specific pain point
-- **Market Opportunity** — size, growth, timing with numbers
-- **Feasibility Summary** — 5-dimension scores with explanations
-- **Key Risks** — 2-3 specific risks (not generic ones)
-- **Recommended Next Steps** — 3 concrete actions for this week
-- **Verdict** — STRONG IDEA / NEEDS REFINEMENT / PIVOT RECOMMENDED
+- **Project Title** — compelling, specific title
+- **Problem Statement** — who, what, why now
+- **Proposed Solution** — what the product does, how users interact
+- **How Autonomy Works** — the 5-step loop mapped to THIS product
+- **Target Users** — specific segment with demographics
+- **Tech Stack** — LLM, UI, libraries, APIs
+- **Agent Tools** — the tools the agent will use
+- **10-Day Build Plan** — day-by-day milestones
+- **Why This Will Win** — the unfair advantage
 
 ---
 
@@ -458,11 +459,11 @@ list and executor.py's routing to match the new tools.
 
 ```
   ┌─────────────────┬──────────────────────┬─────────────────────────┐
-  │  Current Tool    │  Customer Support    │  Invoice Processor      │
-  ├─────────────────┼──────────────────────┼─────────────────────────┤
-  │ market_research  │ ticket_classifier    │ document_parser         │
-  │ feasibility      │ knowledge_search     │ line_item_extractor     │
-  │ brief_writer     │ response_drafter     │ approval_report         │
+  │  Current Tool         │  Customer Support    │  Invoice Processor      │
+  ├─────────────────────┼──────────────────────┼─────────────────────────┤
+  │ problem_definer      │ ticket_classifier    │ document_parser         │
+  │ solution_architect   │ knowledge_search     │ line_item_extractor     │
+  │ submission_writer    │ response_drafter     │ approval_report         │
   ├─────────────────┼──────────────────────┼─────────────────────────┤
   │  Files to change: tools/, planner.py (AVAILABLE_TOOLS),          │
   │  executor.py (elif branches), reviewer.py (scoring criteria)     │

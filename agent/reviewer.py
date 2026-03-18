@@ -14,10 +14,15 @@
 #   This is the core concept students learn in the workshop:
 #   autonomy = planning + execution + SELF-EVALUATION.
 #
+# CP1 RUBRIC:
+#   The reviewer scores against StudAI Foundry's actual CP1
+#   criteria — not generic quality. This ensures the submission
+#   draft meets the hackathon's specific requirements.
+#
 # HOW TO CUSTOMISE (vibe coding prompt):
 #   "Make the reviewer stricter — require score 9 to pass instead
-#    of 7. Update the scoring criteria to emphasise specificity
-#    and actionable recommendations."
+#    of 7. Update the scoring criteria to match CP2 requirements
+#    (working demo, user testing results, iteration evidence)."
 # ============================================================
 
 import json
@@ -30,32 +35,39 @@ PASS_THRESHOLD = 7
 
 
 def evaluate(idea, results, client, model):
-    """Score the agent's output and decide whether to pass or retry."""
+    """Score the agent's CP1 draft and decide whether to pass or retry."""
 
-    # ── BUILD THE PROMPT ─────────────────────────────────────────────
-    prompt = f"""You are a quality reviewer for a startup validation agent.
+    # ── BUILD THE PROMPT ─────────────────────────────────────────
+    prompt = f"""You are a quality reviewer for a CP1 submission drafting agent at StudAI Foundry — India's national autonomous AI hackathon.
 
-Review the output below and score it on a scale of 1-10.
+Review the CP1 submission draft below and score it on a scale of 1-10.
 
 ORIGINAL IDEA: {idea}
 
-GENERATED BRIEF:
-{results.get("brief_writer", "No brief generated")}
+CP1 SUBMISSION DRAFT:
+{results.get("submission_writer", "No submission draft generated")}
 
-FEASIBILITY SCORES:
-{results.get("feasibility", "No feasibility scores generated")}
+SOLUTION ARCHITECTURE:
+{results.get("solution_architect", "No solution architecture generated")}
 
-SCORING CRITERIA:
-  9-10: Specific, actionable, includes concrete market data, clear verdict with reasoning
-  7-8:  Good coverage of all sections, minor gaps in specificity
-  5-6:  Generic analysis that could apply to almost any startup
-  1-4:  Missing sections, too short, or factually unsupported claims
+SCORING CRITERIA — based on what Foundry judges look for in CP1:
+  9-10: Specific problem with evidence, concrete solution with autonomy angle clearly explained,
+        realistic tech stack, actionable 10-day build plan, compelling "why this will win" section
+  7-8:  All required sections present, mostly specific but some gaps in detail or autonomy explanation
+  5-6:  Generic problem/solution that could apply to any project, weak autonomy angle, vague build plan
+  1-4:  Missing required sections, no autonomy explanation, unrealistic scope, or too short
+
+KEY THINGS TO CHECK:
+  - Is the problem statement SPECIFIC (not "students struggle with learning")?
+  - Does the autonomy section explain THINK/PLAN/EXECUTE/REVIEW/UPDATE for THIS product?
+  - Is the build plan realistic for students with 3-4 hours/day?
+  - Would a judge understand exactly what this product does after reading?
 
 Return ONLY valid JSON — no markdown, no explanation, no extra text.
 Use this exact format:
 {{"score": 8, "passed": true, "what_is_good": "brief summary of strengths", "feedback": "specific improvements needed"}}"""
 
-    # ── CALL THE LLM ─────────────────────────────────────────────────
+    # ── CALL THE LLM ─────────────────────────────────────────────
     # Why temperature 0.2: review scoring must be consistent and
     # analytical — we don't want creative interpretation of quality
     response = client.chat.completions.create(
@@ -67,7 +79,7 @@ Use this exact format:
 
     raw = response.choices[0].message.content
 
-    # ── PARSE THE JSON ───────────────────────────────────────────────
+    # ── PARSE THE JSON ───────────────────────────────────────────
     raw = raw.strip()
     if raw.startswith("```"):
         raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
@@ -77,7 +89,7 @@ Use this exact format:
 
     review = json.loads(raw)
 
-    # ── ENFORCE THRESHOLD ────────────────────────────────────────────
+    # ── ENFORCE THRESHOLD ────────────────────────────────────────
     # Why we override the LLM's "passed" field: the LLM might say
     # passed=true for a score of 6. We enforce our own threshold
     # so the agent's quality gate is deterministic, not probabilistic.
