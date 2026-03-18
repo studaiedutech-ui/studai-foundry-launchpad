@@ -27,6 +27,7 @@
 - [What Is This?](#-what-is-this)
 - [Chatbot vs Autonomous Agent](#-chatbot-vs-autonomous-agent)
 - [How the Autonomous Loop Works](#-how-the-autonomous-loop-works)
+- [The 4-Tool Pipeline](#-the-4-tool-pipeline)
 - [Project Architecture](#-project-architecture)
 - [Installation Guide](#-installation-guide)
 - [Running the App](#-running-the-app)
@@ -43,15 +44,16 @@
 
 This is an **autonomous AI agent** that drafts your **CP1 (Checkpoint 1) submission** for the StudAI Foundry hackathon. You give it one input — your project idea. The agent does the rest:
 
-1. **Defines** the core problem, target users, urgency, and current alternatives
-2. **Architects** the solution with autonomy angle, tech stack, and 10-day build plan
-3. **Writes** a formatted CP1 submission draft matching Foundry's criteria
-4. **Reviews** its own draft against the CP1 rubric (scores it 1-10)
-5. **Self-corrects** if the draft isn't submission-ready — and tries again
+1. **Defines** the core problem and target users (Fields 1-2)
+2. **Architects** the solution with autonomy loop plan and tech stack (Fields 3-4)
+3. **Challenges** the idea like a devil's advocate — finds blind spots and hard judge questions
+4. **Writes** all 6 CP1 fields — ADDRESSING the challenger's critique to make the submission stronger
+5. **Reviews** each field individually against the CP1 rubric (per-field scores)
+6. **Self-corrects** if the draft isn't submission-ready — and tries again
 
-The final output is a downloadable **CP1 submission draft** you can refine with your team and submit before the March 23 deadline.
+The final output gives you **per-field copy boxes** you can paste directly into the CP1 submission form, a **score dashboard** showing which fields passed, and the **devil's advocate analysis** that made your submission stronger.
 
-> **This was built for the StudAI LaunchPad workshop** — the official kickoff of StudAI Foundry, India's national autonomous AI hackathon. Students clone this repo, run it, watch the autonomous loop draft their CP1 live, then use AI coding tools (GitHub Copilot / Claude Code) to modify it for their own hackathon project.
+> **This was built for the StudAI LaunchPad workshop** — the official kickoff of StudAI Foundry. Students clone this repo, run it, watch the autonomous loop draft their CP1 live, then use AI coding tools to modify it for their own hackathon project.
 
 ---
 
@@ -90,8 +92,8 @@ This is the core concept taught in the workshop. Understanding this difference i
   ║    └──────────────────────────────────────────────┘              ║
   ║                                                                  ║
   ║    • Agent decides what to do (PLAN)                             ║
-  ║    • Agent runs tools in sequence (EXECUTE)                      ║
-  ║    • Agent judges its own output (REVIEW)   ← THIS IS KEY       ║
+  ║    • Agent runs 4 tools in sequence (EXECUTE)                    ║
+  ║    • Agent judges each field (REVIEW)    ← THIS IS KEY           ║
   ║    • Agent improves on retry (UPDATE)                            ║
   ║    • Up to 3 loops — no human in the loop                        ║
   ╚══════════════════════════════════════════════════════════════════╝
@@ -110,9 +112,9 @@ This is the core concept taught in the workshop. Understanding this difference i
   │   ┌─────────┐   ┌─────────┐   ┌──────────┐   ┌─────────┐      │
   │   │  THINK  │──→│  PLAN   │──→│ EXECUTE  │──→│ REVIEW  │      │
   │   │         │   │         │   │          │   │         │      │
-  │   │ Parse   │   │ Create  │   │ Run 3    │   │ Score   │      │
-  │   │ goal +  │   │ JSON    │   │ tools in │   │ output  │      │
-  │   │ feedback│   │ action  │   │ sequence │   │ 1-10    │      │
+  │   │ Parse   │   │ Create  │   │ Run 4    │   │ Score   │      │
+  │   │ goal +  │   │ JSON    │   │ tools in │   │ each    │      │
+  │   │ feedback│   │ action  │   │ sequence │   │ field   │      │
   │   └─────────┘   │ plan    │   └──────────┘   └────┬────┘      │
   │       ▲         └─────────┘                       │            │
   │       │                                           ▼            │
@@ -142,11 +144,38 @@ This is the core concept taught in the workshop. Understanding this difference i
 
 | Step | What Happens | Why It Matters |
 |------|-------------|---------------|
-| **THINK** | Parses the startup idea + any feedback from previous loops | The agent builds context before acting — just like re-reading a brief before starting work |
-| **PLAN** | LLM generates a JSON action plan: `[{step, tool, reason}]` | The agent decides **what** to do — you don't tell it step by step. That's self-direction. |
-| **EXECUTE** | Runs 3 tools in sequence: problem definer → solution architect → submission writer | Each tool's output feeds into the next one. This is **information chaining**. |
-| **REVIEW** | Scores the output 1-10 against quality criteria | **This is autonomy.** The agent judges its own work. A chatbot skips this entirely. |
-| **UPDATE** | Carries specific feedback into the next loop | Not blind retry — **directed self-correction** with concrete improvements. |
+| **THINK** | Parses the idea + feedback from previous loops | Context awareness — the agent gets smarter each retry |
+| **PLAN** | LLM generates a JSON action plan: `[{step, tool, reason}]` | Self-direction — the agent decides its own workflow |
+| **EXECUTE** | Runs 4 tools: define → architect → challenge → write | **Information chaining** — each tool builds on the previous |
+| **REVIEW** | Scores each of 6 CP1 fields individually 1-10 | **This is autonomy** — per-field quality judgment |
+| **UPDATE** | Carries field-specific feedback into the next loop | Directed self-correction, not blind retry |
+
+---
+
+## 🔗 The 4-Tool Pipeline
+
+What makes this submission drafter powerful is the **4-tool pipeline** — especially the devil's advocate.
+
+```
+  ┌────────────────┐      ┌────────────────┐      ┌────────────────┐      ┌────────────────┐
+  │  Tool 1         │      │  Tool 2         │      │  Tool 3         │      │  Tool 4         │
+  │  PROBLEM        │      │  SOLUTION       │      │  IDEA           │      │  SUBMISSION     │
+  │  DEFINER        │─────→│  ARCHITECT      │─────→│  CHALLENGER     │─────→│  WRITER         │
+  │                 │      │                 │      │                 │      │                 │
+  │  Field 1:       │      │  Field 3:       │      │  • Fatal flaws  │      │  All 6 fields   │
+  │  Problem        │      │  Autonomy Loop  │      │  • Blind spots  │      │  ADDRESSING     │
+  │  Statement      │      │  Plan           │      │  • Hard judge   │      │  the critique   │
+  │                 │      │                 │      │    questions    │      │                 │
+  │  Field 2:       │      │  Field 4:       │      │  • How to      │      │  Fields 5-6:    │
+  │  Target Users   │      │  Tools & APIs   │      │    strengthen  │      │  Eval Logic +   │
+  │                 │      │                 │      │                 │      │  Expected Output│
+  └────────────────┘      └────────────────┘      └────────────────┘      └────────────────┘
+       ▲                                                                         │
+       │                                                                         │
+       └─── Input: just the idea                                 Output: copy-paste CP1 ───┘
+```
+
+**Why the Challenger matters:** Without it, the agent produces optimistic output that tells students what they want to hear. The devil's advocate forces the submission to address hard questions BEFORE judges ask them. The submission writer then incorporates those answers — making the final draft significantly stronger than a naive first attempt.
 
 ---
 
@@ -163,20 +192,21 @@ This is the core concept taught in the workshop. Understanding this difference i
   ├── 📄 .env.example           ← API key template (copy to .env)
   ├── 📄 .gitignore             ← Excludes .env, __pycache__, secrets
   │
-  ├── 🖥️ main.py               ← Streamlit UI — display only, no agent logic
+  ├── 🖥️ main.py               ← Streamlit UI — tabs, per-field boxes, score dashboard
   │
   └── 🤖 agent/                 ← THE AUTONOMOUS AGENT
       ├── __init__.py
       ├── 🔄 loop.py            ← THE CORE — the 5-step autonomy loop
-      ├── 📋 planner.py         ← LLM → JSON action plan
-      ├── ⚡ executor.py         ← Routes plan steps → tool functions
-      ├── ✅ reviewer.py         ← Scores output, decides pass/retry
+      ├── 📋 planner.py         ← LLM → JSON action plan (4 tools)
+      ├── ⚡ executor.py         ← Routes plan steps → tool functions (with retry)
+      ├── ✅ reviewer.py         ← Per-field scoring, decides pass/retry
       │
       └── 🔧 tools/             ← DOMAIN-SPECIFIC TOOLS (these change)
           ├── __init__.py
-          ├── problem_definer.py   ← Tool 1: users, pain point, urgency
-          ├── solution_architect.py← Tool 2: solution, tech stack, build plan
-          └── submission_writer.py ← Tool 3: formatted CP1 draft
+          ├── problem_definer.py   ← Tool 1: Fields 1-2 (Problem + Users)
+          ├── solution_architect.py← Tool 2: Fields 3-4 (Autonomy + Stack)
+          ├── idea_challenger.py   ← Tool 3: Devil's advocate critique
+          └── submission_writer.py ← Tool 4: All 6 fields (addresses critique)
 ```
 
 ### How Data Flows Through the System
@@ -201,29 +231,39 @@ This is the core concept taught in the workshop. Understanding this difference i
                     ┌────────────┐  ┌────────────┐  ┌────────────┐
                     │ planner.py │  │executor.py │  │reviewer.py │
                     │            │  │            │  │            │
-                    │ LLM → JSON │  │ Plan → Run │  │ Score 1-10 │
-                    │ action plan│  │ each tool  │  │ Pass/Fail  │
+                    │ LLM → JSON │  │ Plan → Run │  │ Per-field  │
+                    │ action plan│  │ 4 tools    │  │ score 1-10 │
                     └────────────┘  └──────┬─────┘  └────────────┘
                                            │
-                           ┌───────────────┼───────────────┐
-                           ▼               ▼               ▼
-                    ┌────────────┐  ┌────────────┐  ┌────────────┐
-                    │  Tool 1    │  │  Tool 2    │  │  Tool 3    │
-                    │  problem_  │  │ solution_  │  │ submission │
-                    │  definer   │──→│ architect  │──→│ _writer    │
-                    │            │  │            │  │            │
-                    │ Target     │  │ Solution   │  │ Formatted  │
-                    │ users,     │  │ design,    │  │ CP1 draft  │
-                    │ pain point │  │ tech stack │  │ ready to   │
-                    │ urgency    │  │ build plan │  │ submit     │
-                    └────────────┘  └────────────┘  └────────────┘
-                                                          │
-                                                          ▼
-                                                   ┌────────────┐
-                                                   │  User gets │
-                                                   │  CP1 draft │
-                                                   │  + download│
-                                                   └────────────┘
+                        ┌──────────────────┼──────────────────┐
+                        ▼                  ▼                  ▼
+                 ┌────────────┐    ┌────────────┐    ┌────────────┐
+                 │  Tool 1    │    │  Tool 2    │    │  Tool 3    │
+                 │  problem_  │    │ solution_  │    │   idea_    │
+                 │  definer   │───→│ architect  │───→│ challenger │
+                 │            │    │            │    │            │
+                 │ Fields 1-2 │    │ Fields 3-4 │    │ Critique   │
+                 └────────────┘    └────────────┘    └──────┬─────┘
+                                                           │
+                                                           ▼
+                                                    ┌────────────┐
+                                                    │  Tool 4    │
+                                                    │ submission │
+                                                    │  _writer   │
+                                                    │            │
+                                                    │ All 6      │
+                                                    │ fields +   │
+                                                    │ addresses  │
+                                                    │ critique   │
+                                                    └──────┬─────┘
+                                                           │
+                                                           ▼
+                                                    ┌────────────┐
+                                                    │  Per-field │
+                                                    │  copy boxes│
+                                                    │  + score   │
+                                                    │  dashboard │
+                                                    └────────────┘
 ```
 
 ### Information Chaining Between Tools
@@ -231,20 +271,25 @@ This is the core concept taught in the workshop. Understanding this difference i
 ```
   Tool 1: problem_definer
     Input:  idea
-    Output: target users, pain point, urgency, current alternatives
+    Output: Problem Statement + Target Users
               │
               ▼
   Tool 2: solution_architect
     Input:  idea + problem_definer output
-    Output: solution design, autonomy angle, tech stack, 10-day build plan
+    Output: Autonomy Loop Plan + Tools & APIs
               │
               ▼
-  Tool 3: submission_writer
-    Input:  idea + problem_definer output + solution_architect output
-    Output: Formatted CP1 submission draft
+  Tool 3: idea_challenger
+    Input:  idea + problem_definer + solution_architect output
+    Output: Fatal flaws, blind spots, hard questions, recommendations
+              │
+              ▼
+  Tool 4: submission_writer
+    Input:  idea + ALL previous outputs (including challenger)
+    Output: All 6 CP1 fields — with critique addressed
 ```
 
-> **Why this order matters:** Each tool builds on the previous one's output. The solution architecture is more grounded when it's based on a clear problem definition. The CP1 draft is stronger when it can reference both the problem analysis AND the solution design. This is called **information chaining** — and it's how production AI agents work.
+> **Why the devil's advocate matters:** The same LLM can argue FOR and AGAINST an idea when prompted differently. The agent uses BOTH perspectives to produce a balanced, stronger submission. This is multi-perspective AI — a key concept for the hackathon.
 
 ---
 
@@ -276,7 +321,7 @@ This is the core concept taught in the workshop. Understanding this difference i
 #### On Windows (Command Prompt or PowerShell)
 
 ```bash
-git clone https://github.com/studai-one/studai-foundry-launchpad.git
+git clone https://github.com/studaiedutech-ui/studai-foundry-launchpad.git
 cd studai-foundry-launchpad
 pip install -r requirements.txt
 copy .env.example .env
@@ -285,7 +330,7 @@ copy .env.example .env
 #### On macOS / Linux (Terminal)
 
 ```bash
-git clone https://github.com/studai-one/studai-foundry-launchpad.git
+git clone https://github.com/studaiedutech-ui/studai-foundry-launchpad.git
 cd studai-foundry-launchpad
 pip install -r requirements.txt
 cp .env.example .env
@@ -325,86 +370,38 @@ streamlit run main.py
 
 The app opens automatically in your browser at **http://localhost:8501**.
 
-```
-  ┌─────────────────────────────────────────────────────────┐
-  │  Browser: http://localhost:8501                         │
-  │                                                         │
-  │  ┌───────────────────────────────────────────────────┐  │
-  │  │          StudAI LaunchPad                         │  │
-  │  │   Startup Idea Validator — Autonomous Agent       │  │
-  │  │                                                   │  │
-  │  │  ┌─────────────────────────────────────────────┐  │  │
-  │  │  │  Enter your startup idea...                 │  │  │
-  │  │  └─────────────────────────────────────────────┘  │  │
-  │  │                                                   │  │
-  │  │  [🚀 Draft My CP1]            [💡 Try Example]   │  │
-  │  │                                                   │  │
-  │  │  ┌───────┬───────┬────────┬───────┬───────┐       │  │
-  │  │  │ THINK │ PLAN  │EXECUTE │REVIEW │UPDATE │       │  │
-  │  │  │  ○    │  ○    │   ○    │  ○    │  ○    │       │  │
-  │  │  └───────┴───────┴────────┴───────┴───────┘       │  │
-  │  │                                                   │  │
-  │  │  ┌─────────────────────────────────────────────┐  │  │
-  │  │  │  Activity Log                               │  │  │
-  │  │  │  [HH:MM:SS] ═══ Loop 1 of 3 ═══            │  │  │
-  │  │  │  [HH:MM:SS] Parsing goal: AI tutor app...   │  │  │
-  │  │  │  [HH:MM:SS] Plan created with 3 steps       │  │  │
-  │  │  │  [HH:MM:SS] Running tool: problem_definer     │  │  │
-  │  │  │  ...                                        │  │  │
-  │  │  └─────────────────────────────────────────────┘  │  │
-  │  └───────────────────────────────────────────────────┘  │
-  └─────────────────────────────────────────────────────────┘
-```
-
 ### How to Use:
 
 1. **Paste your Groq API key** in the sidebar (or set it in `.env`)
-2. **Type a startup idea** in the text box — be specific! (or click **💡 Try Example**)
+2. **Type your hackathon idea** in the text box — be specific! (or click **💡 Try Example**)
 3. **Click 🚀 Draft My CP1** — watch the 5 step cards light up in real time
-4. **Read the final brief** — it appears below with a verdict
-5. **Download** the brief as a markdown file using the download button
+4. **View per-field results** — each field has a copy box with validation badges
+5. **Check the score dashboard** — see which fields passed and which need work
+6. **Explore the Agent Reasoning tab** — see the devil's advocate critique
+7. **Download** the full draft as markdown
 
 ---
 
 ## 👀 What You Will See
 
-When you click **Draft My CP1**, the agent works autonomously:
+When you click **Draft My CP1**, the agent works autonomously through 4 tabs:
 
-### Step Cards Light Up in Real Time
+### Tab 1: Per-Field View
+Each CP1 field gets its own copy box with:
+- Validation badge (✅/❌) with character count
+- Text input or textarea matching the actual CP1 form type
+- Field reference table at the bottom
 
-```
-  Loop 1:
-  ┌───────┐  ┌───────┐  ┌────────┐  ┌───────┐  ┌───────┐
-  │ THINK │  │ PLAN  │  │EXECUTE │  │REVIEW │  │UPDATE │
-  │  ✔    │→ │  ✔    │→ │   ✔    │→ │  ✔    │→ │  ⚙    │
-  │ done  │  │ done  │  │  done  │  │ done  │  │active │
-  └───────┘  └───────┘  └────────┘  └───────┘  └───────┘
-                                     Score: 5/10
-                                     FAILED — retrying...
+### Tab 2: Full Draft
+The complete submission as formatted markdown with a download button.
 
-  Loop 2:
-  ┌───────┐  ┌───────┐  ┌────────┐  ┌───────┐  ┌───────┐
-  │ THINK │  │ PLAN  │  │EXECUTE │  │REVIEW │  │UPDATE │
-  │  ✔    │→ │  ✔    │→ │   ✔    │→ │  ✔    │→ │  ↩    │
-  │ done  │  │ done  │  │  done  │  │ done  │  │skipped│
-  └───────┘  └───────┘  └────────┘  └───────┘  └───────┘
-                                     Score: 8/10
-                                     PASSED ✓ — delivering!
-```
+### Tab 3: Agent Reasoning
+- **4-tool pipeline visualization** — see how data flows through the agent
+- **Devil's advocate critique** — the weaknesses found and addressed
+- **Loop count** — how many self-correction cycles the agent used
 
-### Final Output
-
-A structured **CP1 Submission Draft** with:
-
-- **Project Title** — compelling, specific title
-- **Problem Statement** — who, what, why now
-- **Proposed Solution** — what the product does, how users interact
-- **How Autonomy Works** — the 5-step loop mapped to THIS product
-- **Target Users** — specific segment with demographics
-- **Tech Stack** — LLM, UI, libraries, APIs
-- **Agent Tools** — the tools the agent will use
-- **10-Day Build Plan** — day-by-day milestones
-- **Why This Will Win** — the unfair advantage
+### Tab 4: Raw Outputs
+Individual outputs from each of the 4 tools — for learning how autonomous agents chain information.
 
 ---
 
@@ -450,37 +447,38 @@ This repo is your **foundation**. The product you submit to StudAI Foundry is wh
 
 ```
 I want to build [your idea]. Keep loop.py exactly the same.
-Change the tools in agent/tools/ so this agent does [your domain]
-instead of startup validation. Update planner.py's AVAILABLE_TOOLS
+Change the 4 tools in agent/tools/ so this agent does [your domain]
+instead of CP1 drafting. Update planner.py's AVAILABLE_TOOLS
 list and executor.py's routing to match the new tools.
 ```
 
 ### What to Change for Different Domains
 
 ```
-  ┌─────────────────┬──────────────────────┬─────────────────────────┐
-  │  Current Tool         │  Customer Support    │  Invoice Processor      │
+  ┌─────────────────────┬──────────────────────┬─────────────────────────┐
+  │  Current Tool            │  Customer Support    │  Invoice Processor      │
   ├─────────────────────┼──────────────────────┼─────────────────────────┤
   │ problem_definer      │ ticket_classifier    │ document_parser         │
   │ solution_architect   │ knowledge_search     │ line_item_extractor     │
+  │ idea_challenger      │ tone_checker         │ discrepancy_finder      │
   │ submission_writer    │ response_drafter     │ approval_report         │
-  ├─────────────────┼──────────────────────┼─────────────────────────┤
-  │  Files to change: tools/, planner.py (AVAILABLE_TOOLS),          │
-  │  executor.py (elif branches), reviewer.py (scoring criteria)     │
-  │                                                                   │
-  │  Files to KEEP:  loop.py, main.py                                │
-  └───────────────────────────────────────────────────────────────────┘
+  ├─────────────────────┼──────────────────────┼─────────────────────────┤
+  │  Files to change: tools/, planner.py (AVAILABLE_TOOLS),              │
+  │  executor.py (elif branches), reviewer.py (scoring criteria)         │
+  │                                                                       │
+  │  Files to KEEP:  loop.py, main.py                                    │
+  └───────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Example Prompts for Copilot / Claude Code
 
 See `CLAUDE.md` for 6 detailed ready-to-paste prompts, including:
 - Change domain (e.g., customer support, sales qualifier)
-- Add a new tool
+- Add a new tool to the pipeline
 - Make the reviewer stricter
-- Change the output format for CP1 submission
+- Change the output format for CP2 demo
 - Update branding
-- Add a second agent
+- Simplify back to 3 tools
 
 ---
 

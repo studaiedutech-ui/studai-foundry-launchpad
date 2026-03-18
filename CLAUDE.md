@@ -4,7 +4,7 @@
 
 This is **StudAI LaunchPad** — the hands-on workshop product for **StudAI Foundry**, India's national autonomous AI systems hackathon. The workshop (March 19, 2026) is where engineering students at SRMIST learn the difference between a chatbot and an autonomous AI agent by cloning this repo, running it live, and then using "vibe coding" (directing GitHub Copilot or Claude Code) to build their own autonomous agent for the Foundry hackathon.
 
-The product itself is a **CP1 Submission Drafter** — an autonomous AI agent (not a chatbot). The user enters their hackathon project idea. The agent autonomously defines the problem, architects the solution (with tech stack, autonomy angle, and 10-day build plan), drafts a formatted CP1 submission, reviews the draft against Foundry's actual CP1 criteria, and self-corrects if it's not submission-ready. It runs a 5-step loop up to 3 times until the draft passes a quality threshold of 7/10. Students walk out of the workshop with a usable CP1 draft they can refine and submit.
+The product itself is a **CP1 Submission Drafter** — an autonomous AI agent (not a chatbot). The user enters their hackathon project idea. The agent autonomously defines the problem, architects the solution, **challenges the idea like a devil's advocate**, then writes a submission that addresses those challenges. It reviews each field individually against CP1 criteria and self-corrects until the draft passes 7/10. Students walk out with a usable CP1 draft and per-field copy boxes to paste directly into the submission form.
 
 ## 2. The 5-Step Autonomy Loop
 
@@ -22,9 +22,9 @@ The product itself is a **CP1 Submission Drafter** — an autonomous AI agent (n
 
 - **THINK**: Parse the goal and incorporate feedback from any previous failed attempt — context awareness
 - **PLAN**: Ask the LLM to generate a JSON step-by-step execution plan — the agent decides its own workflow
-- **EXECUTE**: Run each tool in the plan (define → architect → write) — tool use with information chaining
-- **REVIEW**: Score the output 1-10 against CP1 criteria — **self-evaluation, the core of autonomy**
-- **UPDATE**: If review failed, carry specific feedback into the next loop iteration — self-correction
+- **EXECUTE**: Run each tool in the plan (define → architect → challenge → write) — tool use with information chaining
+- **REVIEW**: Score each field individually 1-10 against CP1 criteria — **self-evaluation, the core of autonomy**
+- **UPDATE**: If review failed, carry field-specific feedback into the next loop iteration — self-correction
 
 **Why is the REVIEW step what makes this autonomous?** A chatbot returns whatever the LLM generates. An autonomous agent *judges its own work* against a quality standard and decides whether to accept it or try again with specific improvements. This self-evaluation loop is what separates "I called an API" from "I built an autonomous system."
 
@@ -39,37 +39,40 @@ studai-foundry-launchpad/
 ├── .env.example                 ← API key template
 ├── .gitignore                   ← Exclude .env and __pycache__
 │
-├── main.py                      ← Streamlit UI — display only, no agent logic
+├── main.py                      ← Streamlit UI — tabs, per-field boxes, score dashboard
 │
 └── agent/
     ├── __init__.py               ← Package marker
     ├── loop.py                   ← THE CORE — the 5-step autonomy loop
-    ├── planner.py                ← LLM call → JSON plan
+    ├── planner.py                ← LLM call → JSON plan (4 tools)
     ├── executor.py               ← Routes plan steps → tool functions (with retry)
-    ├── reviewer.py               ← Scores output against CP1 rubric → pass/fail
+    ├── reviewer.py               ← Per-field scoring against CP1 rubric → pass/fail
     │
     └── tools/
         ├── __init__.py           ← Package marker
-        ├── problem_definer.py    ← Tool 1: extract problem, users, urgency
-        ├── solution_architect.py ← Tool 2: design solution, tech stack, build plan
-        └── submission_writer.py  ← Tool 3: formatted CP1 submission draft
+        ├── problem_definer.py    ← Tool 1: Fields 1-2 (Problem Statement + Target Users)
+        ├── solution_architect.py ← Tool 2: Fields 3-4 (Autonomy Loop Plan + Tools & APIs)
+        ├── idea_challenger.py    ← Tool 3: Devil's advocate critique
+        └── submission_writer.py  ← Tool 4: Compiles all 6 fields using challenger insights
 ```
 
-**main.py** is UI only. It renders the Streamlit dashboard with step cards, a live activity log, loop counter, and educational content about autonomy. Do NOT put agent logic, LLM calls, or tool functions here.
+**main.py** is UI only. It renders tabs (Per-Field View, Full Draft, Agent Reasoning, Raw Outputs), validation badges, score dashboard, and educational content. Do NOT put agent logic, LLM calls, or tool functions here.
 
 **agent/loop.py** is the core autonomy loop. It orchestrates THINK → PLAN → EXECUTE → REVIEW → UPDATE. It imports planner, executor, and reviewer — nothing else. Do NOT modify its structure. This is the universal agent architecture.
 
-**agent/planner.py** creates a JSON action plan from the goal and feedback. It knows what tools are available (AVAILABLE_TOOLS list). To add a new tool to the agent, add it here first.
+**agent/planner.py** creates a JSON action plan with 4 steps. It knows what tools are available (AVAILABLE_TOOLS list). To add a new tool, add it here first.
 
-**agent/executor.py** routes each plan step to the correct tool function. Each tool gets different inputs because later tools need earlier outputs (information chaining). Includes retry logic with exponential backoff for API resilience.
+**agent/executor.py** routes each plan step to the correct tool function. Information chaining: problem_definer → solution_architect → idea_challenger → submission_writer. Each tool gets progressively more context. Includes retry logic with exponential backoff.
 
-**agent/reviewer.py** scores the output against StudAI Foundry's CP1 criteria and decides pass or retry. PASS_THRESHOLD = 7. This is the file that makes the system autonomous — it judges the agent's own work. Without this, you just have a pipeline.
+**agent/reviewer.py** scores each of the 6 CP1 fields individually (1-10) and returns per-field status (pass/needs_work/fail). Returns overall score. PASS_THRESHOLD = 7.
 
-**agent/tools/problem_definer.py** — Tool 1. Extracts target users, pain point, urgency, and current alternatives. Only needs the idea as input (first in the chain).
+**agent/tools/problem_definer.py** — Tool 1. Generates Field 1 (Problem Statement) and Field 2 (Target Users). Only needs the idea as input (first in the chain).
 
-**agent/tools/solution_architect.py** — Tool 2. Designs the solution with autonomy angle, tech stack, agent tools, and 10-day build plan. Takes idea + problem analysis — this is information chaining.
+**agent/tools/solution_architect.py** — Tool 2. Generates Field 3 (Autonomy Loop Plan) and Field 4 (Tools & APIs). Takes idea + problem analysis.
 
-**agent/tools/submission_writer.py** — Tool 3. Synthesises everything into a formatted CP1 submission draft. Always runs last because it needs all previous outputs.
+**agent/tools/idea_challenger.py** — Tool 3. Devil's advocate that finds Fatal Flaws, Blind Spots, Hard Judge Questions, and Strengthening Recommendations. Takes idea + problem + solution.
+
+**agent/tools/submission_writer.py** — Tool 4. ADDRESSES the challenger critique and compiles all 6 CP1 fields. Takes idea + problem + solution + challenger output. Always runs last.
 
 ## 4. The One Rule
 
@@ -78,8 +81,6 @@ studai-foundry-launchpad/
 `agent/loop.py` stays the same no matter what domain the agent is for. To change what the agent does — from CP1 drafting to customer support to invoice processing — you only change the files in `agent/tools/`, update `AVAILABLE_TOOLS` in `planner.py`, update the routing in `executor.py`, and adjust the review criteria in `reviewer.py`.
 
 This constraint is intentional. It teaches students that ALL autonomous agents — regardless of domain — follow the exact same 5-step loop: understand the goal, plan the work, execute tools, evaluate quality, self-correct. The domain-specific work lives in the tools. The autonomy architecture is universal.
-
-When students vibe-code their Foundry project, they tell the AI: *"Keep loop.py exactly the same, change the tools to do X."* This is the skill they are learning.
 
 ## 5. How to Change the Domain
 
@@ -94,6 +95,7 @@ Step-by-step process:
 |---|---|---|---|
 | `problem_definer` | `ticket_classifier` | `invoice_parser` | `lead_scorer` |
 | `solution_architect` | `response_generator` | `line_item_validator` | `company_researcher` |
+| `idea_challenger` | `tone_checker` | `discrepancy_finder` | `objection_predictor` |
 | `submission_writer` | `resolution_summary` | `approval_report` | `outreach_draft` |
 
 ## 6. Copy-Paste Prompts for GitHub Copilot / Claude Code
@@ -101,10 +103,11 @@ Step-by-step process:
 ### Prompt 1: Change the domain
 ```
 Change this from a CP1 submission drafter to a customer support agent. Keep loop.py
-exactly the same. Replace the 3 tools:
-- problem_definer.py → ticket_classifier.py (classify the support ticket by urgency and category)
-- solution_architect.py → response_generator.py (draft a response using the classification)
-- submission_writer.py → resolution_summary.py (write a summary of the resolution)
+exactly the same. Replace the 4 tools:
+- problem_definer.py → ticket_classifier.py (classify the support ticket)
+- solution_architect.py → response_generator.py (draft a response)
+- idea_challenger.py → tone_checker.py (verify tone is professional and empathetic)
+- submission_writer.py → resolution_summary.py (write the final resolution)
 Update AVAILABLE_TOOLS in planner.py, the elif branches in executor.py, and the
 review criteria in reviewer.py. Do not change loop.py or main.py structure.
 ```
@@ -115,23 +118,22 @@ Add a new tool called market_validator to the agent. Create a new file
 agent/tools/market_validator.py with a run(idea, problem_analysis, client, model)
 function that asks the LLM to validate market size claims and identify 3 real
 competitors. Add it to AVAILABLE_TOOLS in planner.py. Add an elif branch in
-executor.py that routes to it. Make it run as step 2 (after problem_definer,
-before solution_architect). Do not change loop.py.
+executor.py that routes to it. Make it run as step 3 (after solution_architect,
+before idea_challenger). Do not change loop.py.
 ```
 
 ### Prompt 3: Make the reviewer stricter
 ```
 In agent/reviewer.py, change PASS_THRESHOLD from 7 to 9. Update the scoring
-criteria in the prompt to require: specific product description (not vague),
-autonomy explanation with all 5 steps mapped to the product, realistic 10-day
-build plan with daily milestones, and compelling "why this will win" section.
-Do not change any other file.
+criteria to require: all 6 fields present with minimum char lengths met,
+autonomy explanation with all 5 steps mapped, specific target users (not generic),
+and challenger critique fully addressed. Do not change any other file.
 ```
 
 ### Prompt 4: Change output to CP2 demo script
 ```
 Change submission_writer.py to output a CP2 demo script instead of a CP1 draft.
-Replace the markdown sections with: Demo Flow (step by step what to show),
+Replace the 6 field sections with: Demo Flow (step by step what to show),
 Talking Points (what to say at each step), Live Demo Checklist (what must work),
 Backup Plan (what to do if the demo breaks), and Key Metrics to Highlight.
 Keep the run() function signature the same. Do not change loop.py.
@@ -141,18 +143,16 @@ Keep the run() function signature the same. Do not change loop.py.
 ```
 Change the UI title and branding in main.py from "StudAI LaunchPad" to
 "[Your Product Name]". Update the header, page title, sidebar text, and
-placeholder example to match your product. Keep the step card rendering,
-log box, loop counter, and callback structure exactly the same. Do not change
-any agent/ files.
+placeholder example to match your product. Keep the tab structure, step card
+rendering, log box, and callback structure exactly the same.
 ```
 
-### Prompt 6: Add a devil's advocate agent
+### Prompt 6: Remove the challenger and go back to 3 tools
 ```
-Add a second review pass in reviewer.py that acts as a "devil's advocate" —
-after the initial scoring, run a second LLM call that specifically challenges
-the submission's assumptions and looks for weaknesses. Include the devil's
-advocate feedback in the review output so the agent can address it in the next
-loop. Keep the evaluate() function signature the same. Do not change loop.py.
+Remove idea_challenger.py from the pipeline. Update AVAILABLE_TOOLS in planner.py
+to remove it (3 tools). Remove its elif branch in executor.py. Update
+submission_writer.py to remove the challenger_critique parameter. Keep loop.py
+the same. This simplifies the pipeline for simpler domains.
 ```
 
 ## 7. What NOT to Change
@@ -177,14 +177,14 @@ Students clone this repo in the LaunchPad workshop, understand the autonomy loop
 
 Each Foundry track can be built by swapping the tools in this repo:
 
-| Foundry Track | Tool 1 | Tool 2 | Tool 3 |
-|---|---|---|---|
-| HealthTech | `symptom_analyser` | `risk_scorer` | `care_plan_writer` |
-| EdTech | `learning_gap_finder` | `curriculum_matcher` | `study_plan_writer` |
-| FinTech | `expense_categoriser` | `budget_scorer` | `savings_plan_writer` |
-| AgriTech | `crop_analyser` | `yield_predictor` | `farm_plan_writer` |
-| LegalTech | `clause_extractor` | `risk_flagger` | `summary_writer` |
-| Social Impact | `need_identifier` | `impact_scorer` | `proposal_writer` |
+| Foundry Track | Tool 1 | Tool 2 | Tool 3 | Tool 4 |
+|---|---|---|---|---|
+| HealthTech | `symptom_analyser` | `risk_scorer` | `assumption_checker` | `care_plan_writer` |
+| EdTech | `learning_gap_finder` | `curriculum_matcher` | `difficulty_calibrator` | `study_plan_writer` |
+| FinTech | `expense_categoriser` | `budget_scorer` | `risk_flagger` | `savings_plan_writer` |
+| AgriTech | `crop_analyser` | `yield_predictor` | `weather_validator` | `farm_plan_writer` |
+| LegalTech | `clause_extractor` | `risk_flagger` | `precedent_checker` | `summary_writer` |
+| Social Impact | `need_identifier` | `impact_scorer` | `feasibility_checker` | `proposal_writer` |
 
 **The loop stays the same. The tools change. That's the lesson.**
 

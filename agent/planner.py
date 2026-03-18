@@ -14,8 +14,8 @@
 #
 # HOW TO CUSTOMISE (vibe coding prompt):
 #   "Add a new tool to AVAILABLE_TOOLS in planner.py called
-#    competitor_analyzer with a description of what it does.
-#    Then add the routing in executor.py."
+#    market_validator with a description. Then add the routing
+#    in executor.py."
 # ============================================================
 
 import json
@@ -34,8 +34,12 @@ AVAILABLE_TOOLS = [
         "description": "Generate CP1 Field 3 (Autonomy Loop Plan) and Field 4 (Tools & APIs) using the problem analysis",
     },
     {
+        "name": "idea_challenger",
+        "description": "Devil's advocate — challenge the idea, find blind spots, anticipate judge questions, suggest improvements",
+    },
+    {
         "name": "submission_writer",
-        "description": "Generate CP1 Field 5 (Evaluation Logic) and Field 6 (Expected Output), then compile all 6 fields into a copy-paste-ready submission",
+        "description": "Generate CP1 Field 5 (Evaluation Logic) and Field 6 (Expected Output), compile all 6 fields using insights from the challenger",
     },
 ]
 
@@ -44,8 +48,6 @@ def create_plan(idea, feedback, client, model):
     """Ask the LLM to generate a JSON execution plan for the given idea."""
 
     # ── BUILD THE PROMPT ─────────────────────────────────────────
-    # Why we include feedback: if the reviewer rejected the last attempt,
-    # we pass its feedback here so the planner can adjust the strategy
     feedback_section = ""
     if feedback:
         feedback_section = f"""
@@ -66,20 +68,21 @@ PROJECT IDEA: {idea}
 AVAILABLE TOOLS:
 {tools_description}
 
-Create an execution plan with exactly 3 steps, one per tool.
-The submission_writer tool MUST be the last step (it synthesises all previous outputs).
+Create an execution plan with exactly 4 steps, one per tool.
+Order: problem_definer → solution_architect → idea_challenger → submission_writer
+The submission_writer MUST be last (it synthesises all previous outputs).
+The idea_challenger MUST come before submission_writer (its critique improves the final draft).
 
 Return ONLY valid JSON — no markdown, no explanation, no extra text.
 Use this exact format:
 [
-  {{"step": 1, "tool": "tool_name", "reason": "why this step is needed"}},
-  {{"step": 2, "tool": "tool_name", "reason": "why this step is needed"}},
-  {{"step": 3, "tool": "tool_name", "reason": "why this step is needed"}}
+  {{"step": 1, "tool": "problem_definer", "reason": "why this step"}},
+  {{"step": 2, "tool": "solution_architect", "reason": "why this step"}},
+  {{"step": 3, "tool": "idea_challenger", "reason": "why this step"}},
+  {{"step": 4, "tool": "submission_writer", "reason": "why this step"}}
 ]"""
 
     # ── CALL THE LLM ─────────────────────────────────────────────
-    # Why temperature 0.2: planning needs to be deterministic — we want
-    # the same logical structure every time, not creative variation
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
@@ -90,8 +93,6 @@ Use this exact format:
     raw = response.choices[0].message.content
 
     # ── PARSE THE JSON ───────────────────────────────────────────
-    # Why we strip code fences: some LLMs wrap JSON in ```json ... ```
-    # even when told not to — this handles that gracefully
     raw = raw.strip()
     if raw.startswith("```"):
         raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]

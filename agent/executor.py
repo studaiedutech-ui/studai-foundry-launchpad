@@ -6,19 +6,14 @@
 #   step by calling the correct tool function. It is the "hands"
 #   of the agent — it does the actual work.
 #
-# INFORMATION FLOW:
-#   Each tool gets different inputs because information chains
-#   through the pipeline:
-#     - problem_definer: only needs the idea (it's the first tool)
-#     - solution_architect: needs the idea AND problem analysis
-#       (so the solution directly addresses the real problem)
-#     - submission_writer: needs EVERYTHING (idea + problem + solution)
-#       because it synthesises all previous outputs into the CP1 draft
+# INFORMATION FLOW (4-tool pipeline):
+#   problem_definer    → only needs the idea (first in chain)
+#   solution_architect → needs idea + problem analysis
+#   idea_challenger    → needs idea + problem + solution (challenges both)
+#   submission_writer  → needs EVERYTHING including challenger output
 #
 # RESILIENCE:
 #   Each tool call is wrapped in retry logic with exponential backoff.
-#   This handles transient network errors and occasional API hiccups
-#   without crashing the entire agent loop.
 #
 # HOW TO CUSTOMISE (vibe coding prompt):
 #   "Add a new elif branch in executor.py for a tool called
@@ -28,19 +23,17 @@
 
 import time
 
-from agent.tools import problem_definer, solution_architect, submission_writer
+from agent.tools import problem_definer, solution_architect, idea_challenger, submission_writer
 
 # ── RETRY CONFIGURATION ─────────────────────────────────────────
-# Why 2 retries: enough to survive a transient API blip, but not so
-# many that a genuine error wastes the student's time waiting
 MAX_RETRIES = 2
-RETRY_DELAY = 2  # seconds — doubles on each retry (exponential backoff)
+RETRY_DELAY = 2
 
 
 def _run_with_retry(fn, tool_name, on_log):
     """Run a tool function with retry logic for transient API errors."""
     last_error = None
-    for attempt in range(1, MAX_RETRIES + 2):  # +2 because range is exclusive and attempt 1 is the first try
+    for attempt in range(1, MAX_RETRIES + 2):
         try:
             return fn()
         except Exception as e:
@@ -64,9 +57,6 @@ def run_plan(plan, idea, client, model, on_log):
         on_log(f"Running tool: {tool} — {step['reason']}")
 
         # ── ROUTE TO THE CORRECT TOOL ────────────────────────────────
-        # Why each tool gets different inputs: later tools need the
-        # outputs of earlier tools. This is how the agent builds up
-        # a complete CP1 submission step by step.
         if tool == "problem_definer":
             results["problem_definer"] = _run_with_retry(
                 lambda: problem_definer.run(idea, client, model),
@@ -74,19 +64,26 @@ def run_plan(plan, idea, client, model, on_log):
             )
 
         elif tool == "solution_architect":
-            # Why we capture the value: Python closures bind by reference,
-            # so we snapshot problem_definer result for the lambda
             pd = results.get("problem_definer", "")
             results["solution_architect"] = _run_with_retry(
                 lambda: solution_architect.run(idea, pd, client, model),
                 tool, on_log,
             )
 
+        elif tool == "idea_challenger":
+            pd = results.get("problem_definer", "")
+            sa = results.get("solution_architect", "")
+            results["idea_challenger"] = _run_with_retry(
+                lambda: idea_challenger.run(idea, pd, sa, client, model),
+                tool, on_log,
+            )
+
         elif tool == "submission_writer":
             pd = results.get("problem_definer", "")
             sa = results.get("solution_architect", "")
+            ic = results.get("idea_challenger", "")
             results["submission_writer"] = _run_with_retry(
-                lambda: submission_writer.run(idea, pd, sa, client, model),
+                lambda: submission_writer.run(idea, pd, sa, ic, client, model),
                 tool, on_log,
             )
 

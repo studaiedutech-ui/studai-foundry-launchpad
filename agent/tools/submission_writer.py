@@ -1,87 +1,95 @@
 # ============================================================
-# submission_writer.py — Tool 3: Generate Evaluation Logic + Expected Output
-#                        and compile all 6 CP1 fields
+# submission_writer.py — Tool 4: Compile all 6 CP1 fields
 # ============================================================
 # PURPOSE:
-#   This tool synthesises the outputs from Tool 1 and Tool 2 and
-#   generates the remaining two CP1 form fields:
-#     Field 5: Evaluation Logic (textarea, min 20 chars)
-#     Field 6: Expected Output (textarea, min 20 chars)
+#   This tool synthesises outputs from Tools 1-3 (problem analysis,
+#   solution architecture, AND devil's advocate challenges) to
+#   produce all 6 CP1 fields in copy-paste-ready format.
 #
-#   It then compiles ALL 6 fields into a formatted, copy-paste-ready
-#   CP1 submission draft. Each field is clearly labelled so students
-#   can paste directly into the StudAI Foundry submission form.
-#
-# WHY THIS IS ALWAYS THE LAST TOOL (synthesis pattern):
-#   The submission writer needs ALL previous outputs to produce the
-#   final two fields and compile the complete draft. Evaluation logic
-#   can't be written without knowing the autonomy loop plan. Expected
-#   output can't be defined without knowing the problem and solution.
+#   The challenger's critique makes the output STRONGER — the
+#   submission addresses weaknesses before judges find them.
 #
 # HOW TO CUSTOMISE (vibe coding prompt):
 #   "Change submission_writer.py to output a CP2 demo script
-#    instead of a CP1 draft. Include sections for: Demo Flow,
-#    Talking Points, Live Demo Checklist, and Backup Plan."
+#    instead. Include: Demo Flow, Talking Points, Live Demo
+#    Checklist, and Backup Plan."
 # ============================================================
 
 
-def run(idea, problem_analysis, solution_architecture, client, model):
-    """Generate Evaluation Logic, Expected Output, and compile all 6 CP1 fields."""
+def run(idea, problem_analysis, solution_architecture, challenger_critique, client, model):
+    """Compile all 6 CP1 fields using insights from all previous tools."""
 
     # ── BUILD THE PROMPT ─────────────────────────────────────────
-    prompt = f"""You are helping a student team complete their CP1 (Checkpoint 1) submission for StudAI Foundry — India's national autonomous AI hackathon.
+    prompt = f"""You are writing the final CP1 submission for StudAI Foundry — India's national autonomous AI hackathon.
 
-Previous tools have already generated Fields 1-4. Now generate Fields 5-6 and compile ALL fields into the final submission.
+You have THREE inputs from previous tools:
+1. Problem analysis (Fields 1-2 raw material)
+2. Solution architecture (Fields 3-4 raw material)
+3. Devil's advocate critique (use this to STRENGTHEN the submission)
 
 PROJECT IDEA: {idea}
 
-FIELDS 1-2 (from problem_definer):
+PROBLEM ANALYSIS:
 {problem_analysis}
 
-FIELDS 3-4 (from solution_architect):
+SOLUTION ARCHITECTURE:
 {solution_architecture}
 
-YOUR TASK — Generate Fields 5-6 and compile the complete submission:
+DEVIL'S ADVOCATE CRITIQUE:
+{challenger_critique}
 
-Write the output using these EXACT headers. Each field must be clearly separated so students can copy-paste into the form.
+IMPORTANT: The critique above found weaknesses. ADDRESS THEM in your output. Don't ignore them — weave the answers into the relevant fields. This is what makes the submission stronger than a naive first draft.
 
----
-
-## CP1 SUBMISSION — COPY-PASTE READY
+Write EXACTLY 6 fields with these EXACT headers. Each field MUST be clearly separated.
 
 ### FIELD 1 — Problem Statement
-(Extract and clean up the problem statement from the analysis above. Must be at least 50 characters. 3-5 clear sentences answering: "What problem does your AI agent solve?")
+Write 3-5 sentences answering: "What problem does your AI agent solve?"
+Be specific. Include who has the problem, what the pain is, and why it needs solving NOW.
+Address any blind spots the challenger found about the problem.
+MINIMUM 50 characters.
 
 ### FIELD 2 — Target Users
-(Extract and clean up the target users from the analysis above. Must be at least 10 characters. One specific sentence answering: "Who will use this?")
+One specific sentence: "Who will use this?"
+Not "students" — be specific: demographics, context, location.
+MINIMUM 10 characters.
 
 ### FIELD 3 — Autonomy Loop Plan
-(Extract and clean up the autonomy loop plan from the analysis above. Must be at least 50 characters. Describes how the AI agent operates autonomously through THINK → PLAN → EXECUTE → REVIEW → UPDATE.)
+Describe how the AI agent operates autonomously. Map ALL 5 steps:
+- THINK: What does the agent analyse first?
+- PLAN: What JSON action plan does it create?
+- EXECUTE: What tools run and in what order?
+- REVIEW: How does it score its own output? What criteria?
+- UPDATE: What feedback does it use to improve on retry?
+Address the challenger's questions about the autonomy approach.
+MINIMUM 50 characters. Write 4-6 specific sentences.
 
 ### FIELD 4 — Tools & APIs
-(Extract the tools list from the analysis above. Comma-separated. Example format: "Groq API, Streamlit, Python, python-dotenv")
+Comma-separated list. Example: "Groq API, Streamlit, Python, python-dotenv, Tavily Search"
+Keep it realistic for a student team.
 
 ### FIELD 5 — Evaluation Logic
-(NEW — generate this now. How will you measure if the agent's output is successful? What metrics or criteria does the REVIEW step check? Be specific to THIS product. Must be at least 20 characters. 2-3 sentences. Example: "The agent scores its output on 3 criteria: accuracy of syllabus coverage (>80%), difficulty progression alignment, and time feasibility for the student's schedule. A combined score of 7/10 or higher passes quality review.")
+How will you measure if the agent's output is successful?
+What metrics does the REVIEW step check? Be specific to THIS product.
+MINIMUM 20 characters. 2-3 sentences.
 
 ### FIELD 6 — Expected Output
-(NEW — generate this now. What does a successful output from this agent look like? Describe the concrete deliverable the user receives. Must be at least 20 characters. 2-3 sentences. Example: "A personalised 7-day study plan with daily 15-minute micro-lessons, 3 practice questions per topic, and priority ranking of weak areas — delivered as a formatted message via WhatsApp.")
+What does a successful output look like? Describe the concrete deliverable.
+A judge should be able to picture exactly what the user receives.
+MINIMUM 20 characters. 2-3 sentences.
 
----
-
-IMPORTANT RULES:
-- Each field must meet its minimum character length
-- Fields must be directly copy-pasteable into the StudAI Foundry submission form
-- Be specific to THIS project — no generic statements
-- Every sentence must carry weight — judges read 100+ submissions
-- Keep the total under 500 words"""
+RULES:
+- Every field must meet its minimum character length
+- Address challenger critique — don't leave weaknesses unaddressed
+- Be specific to THIS project, not generic
+- Judges read 100+ submissions — every sentence must carry weight
+- Under 500 words total"""
 
     # ── CALL THE LLM ─────────────────────────────────────────────
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.4,
-        max_tokens=800,
+        max_tokens=900,
     )
 
     return response.choices[0].message.content
