@@ -1,77 +1,67 @@
 # ============================================================
-# solution_architect.py — Tool 2: Design the solution & build plan
+# solution_architect.py — Tool 2: Generate Autonomy Loop Plan + Tools & APIs
 # ============================================================
 # PURPOSE:
 #   This tool takes the idea AND the problem analysis from Tool 1,
-#   then designs a concrete solution: what to build, what tech stack
-#   to use, how autonomy/AI fits in, and a realistic 10-day build
-#   plan for the Foundry hackathon.
+#   then generates two of the six CP1 form fields:
+#     Field 3: Autonomy Loop Plan (textarea, min 50 chars)
+#     Field 4: Tools & APIs (comma-separated input)
 #
 # WHY THIS TAKES problem_analysis AS INPUT (information chaining):
-#   The solution must directly address the problem defined in Tool 1.
-#   If we skipped Tool 1 and went straight to solution design, the
-#   LLM might propose a solution for a DIFFERENT problem than what
-#   the user described. Information chaining keeps the pipeline
+#   The autonomy design must directly address the problem from Tool 1.
+#   If we skipped Tool 1, the LLM might design an autonomy loop for
+#   a DIFFERENT problem. Information chaining keeps the pipeline
 #   grounded — each tool builds on the previous one's output.
 #
 # HOW TO CUSTOMISE (vibe coding prompt):
-#   "Update solution_architect.py to design solutions for [your
-#    domain]. Change the tech stack recommendations and build plan
-#    timeline to match your hackathon's requirements."
+#   "Update solution_architect.py to design autonomy loops for
+#    [your domain]. Change the tool/API recommendations to match
+#    your hackathon's requirements."
 # ============================================================
 
 
 def run(idea, problem_analysis, client, model):
-    """Design a solution architecture and 10-day build plan."""
+    """Generate the Autonomy Loop Plan and Tools & APIs for CP1."""
 
     # ── BUILD THE PROMPT ─────────────────────────────────────────
-    prompt = f"""You are a technical architect helping a student team design their hackathon project for StudAI Foundry — a national autonomous AI systems hackathon.
+    prompt = f"""You are helping a student team fill out their CP1 submission for StudAI Foundry — India's national autonomous AI hackathon.
 
-The team has defined their problem. Now design their solution.
+The team has defined their problem. Now design how the autonomous agent works.
 
 PROJECT IDEA: {idea}
 
-PROBLEM ANALYSIS:
+PROBLEM ANALYSIS FROM PREVIOUS STEP:
 {problem_analysis}
 
-Respond with these exact sections:
+Respond with these EXACT two sections (use the exact headers):
 
-**Proposed Solution:**
-What exactly will this product do? Describe it in 3-4 sentences. Be concrete — not "an AI-powered platform" but "a WhatsApp bot that receives a photo of a prescription and returns a simplified explanation in Hindi/English within 30 seconds."
+**FIELD 3 — Autonomy Loop Plan:**
+Describe how the AI agent operates autonomously using the 5-step loop. Map each step to THIS specific product:
 
-**The Autonomy Angle:**
-How does the 5-step autonomous agent loop (THINK → PLAN → EXECUTE → REVIEW → UPDATE) apply to this product? What does the agent THINK about? What tools does it PLAN to use? What does it EXECUTE? How does it REVIEW its own output? Be specific — this is what makes it an autonomous agent, not a chatbot.
+- THINK: What does the agent analyse before starting? (e.g., "Parses the student's syllabus and identifies weak topics from past exam scores")
+- PLAN: What action plan does it create? (e.g., "Creates a JSON plan: first run topic_analyzer, then gap_finder, then study_plan_writer")
+- EXECUTE: What tools does it run and in what order? What does each tool produce?
+- REVIEW: How does it evaluate its own output? What quality criteria does it check? (e.g., "Scores the study plan on coverage, difficulty progression, and time feasibility")
+- UPDATE: What specific feedback does it use to improve on retry? (e.g., "If coverage score is below 7, adds more practice questions for weak topics")
 
-**Recommended Tech Stack:**
-List the specific technologies. Keep it realistic for a student team with 10 days:
-- LLM Provider: (Groq / OpenAI / etc.)
-- UI: (Streamlit / Gradio / WhatsApp API / etc.)
-- Key Libraries: (list 3-5 max)
-- External APIs: (if any — keep it to free tiers)
+Write this as a flowing paragraph or structured list. Must be at least 50 characters. Be specific to THIS product — not generic autonomy descriptions. 4-6 sentences.
 
-**Agent Tools Design:**
-List 3-4 tools the agent would use (like the tools/ folder in the starter repo). For each:
-- Tool name (snake_case)
-- What it does in one sentence
-- What input it needs
+**FIELD 4 — Tools & APIs:**
+List the specific tools, APIs, and libraries this agent would use, comma-separated. Include:
+- LLM provider (e.g., Groq, OpenAI)
+- UI framework (e.g., Streamlit, Gradio)
+- Key Python libraries
+- Any external APIs (free tiers only)
+Format: comma-separated, like "Groq API, Streamlit, Python, LangChain, Tavily Search API"
 
-**10-Day Build Plan:**
-Day 1-2: [what to build]
-Day 3-4: [what to build]
-Day 5-6: [what to build]
-Day 7-8: [what to build]
-Day 9-10: [what to build — polish, demo video, final submission]
-
-Be realistic. Students have classes. Assume 3-4 hours/day of building. Under 400 words."""
+Be realistic for a student team building in 10 days."""
 
     # ── CALL THE LLM ─────────────────────────────────────────────
-    # Why temperature 0.3: technical architecture needs to be precise
-    # and realistic — we don't want hallucinated tech stacks
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
-        max_tokens=600,
+        max_tokens=500,
     )
 
     return response.choices[0].message.content

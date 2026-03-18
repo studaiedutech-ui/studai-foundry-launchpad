@@ -1,58 +1,46 @@
 # ============================================================
-# problem_definer.py — Tool 1: Extract and define the problem
+# problem_definer.py — Tool 1: Generate Problem Statement + Target Users
 # ============================================================
 # PURPOSE:
-#   This tool takes a raw startup/project idea and extracts a
-#   structured problem definition: who has the problem, what
-#   exactly the problem is, how urgent it is, and what people
-#   currently do without a solution.
+#   This tool takes a raw project idea and generates two of the
+#   six CP1 form fields:
+#     Field 1: Problem Statement (textarea, min 50 chars)
+#     Field 2: Target Users (input, min 10 chars)
 #
 # WHY THIS IS A SEPARATE FILE (single responsibility):
-#   Each tool does ONE job. problem_definer doesn't propose
-#   solutions — it only clarifies the problem. This forces the
-#   agent to understand the problem BEFORE jumping to solutions,
-#   which is how good product thinking works.
+#   Each tool does ONE job. problem_definer focuses only on the
+#   problem and who has it — it doesn't propose solutions. This
+#   forces the agent to understand the problem BEFORE jumping to
+#   solutions, which is how good product thinking works.
 #
 # HOW TO CUSTOMISE (vibe coding prompt):
 #   "Change problem_definer.py to extract problems specific to
 #    [your domain]. For example, for a healthcare agent, extract
-#    patient pain points, clinical workflow gaps, and regulatory
-#    constraints instead of generic startup problems."
+#    patient pain points and clinical workflow gaps."
 # ============================================================
 
 
 def run(idea, client, model):
-    """Extract a structured problem definition from a raw idea."""
+    """Generate the Problem Statement and Target Users for CP1."""
 
     # ── BUILD THE PROMPT ─────────────────────────────────────────
-    prompt = f"""You are a product strategist helping a student team define their problem clearly for a hackathon submission.
+    prompt = f"""You are helping a student team fill out their CP1 submission for StudAI Foundry — India's national autonomous AI hackathon.
 
-Given this project idea, extract a structured problem definition.
+Given this project idea, generate EXACTLY two outputs matching the CP1 form fields.
 
 PROJECT IDEA: {idea}
 
-Respond with these exact sections:
+Respond with these EXACT two sections (use the exact headers):
 
-**Target Users:**
-Who exactly has this problem? Be specific — not "students" but "2nd-3rd year engineering students in tier-2 Indian colleges who struggle with X."
+**FIELD 1 — Problem Statement:**
+Write what problem this AI agent solves. Be specific — not "students struggle with learning" but describe the exact pain point, who experiences it, how often, and why it needs solving NOW. Must be at least 50 characters. Write 3-5 sentences. Be specific to India where relevant.
 
-**The Problem:**
-What is the specific pain point in 2-3 sentences? Don't describe the solution — describe the PAIN. What are users frustrated by? What takes too long? What fails?
+**FIELD 2 — Target Users:**
+Who will use this? Be specific — not "students" but "2nd-3rd year engineering students in tier-2 Indian colleges" or "small restaurant owners in semi-urban India." One clear sentence, at least 10 characters.
 
-**Urgency & Frequency:**
-How often do users face this problem? Is it daily, weekly, seasonal? Why does it need to be solved NOW — what has changed recently (AI availability, policy changes, market shifts)?
-
-**Current Alternatives:**
-What do users do TODAY without this solution? Manual process? Existing apps that fall short? Asking friends? Nothing? Be specific.
-
-**Problem Severity (1-10):**
-Rate how painful this problem is with one sentence justification.
-
-Be specific to India where relevant. Under 250 words. No generic filler."""
+Be concrete and specific. No generic filler. No buzzwords."""
 
     # ── CALL THE LLM ─────────────────────────────────────────────
-    # Why temperature 0.4: we want specific, grounded analysis —
-    # not creative fiction about the problem
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],

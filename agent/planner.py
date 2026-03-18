@@ -27,15 +27,15 @@ import json
 AVAILABLE_TOOLS = [
     {
         "name": "problem_definer",
-        "description": "Extract and define the core problem: target users, pain point, urgency, current alternatives",
+        "description": "Generate CP1 Field 1 (Problem Statement) and Field 2 (Target Users) from the raw idea",
     },
     {
         "name": "solution_architect",
-        "description": "Design the solution: proposed product, autonomy angle, tech stack, agent tools, and 10-day build plan",
+        "description": "Generate CP1 Field 3 (Autonomy Loop Plan) and Field 4 (Tools & APIs) using the problem analysis",
     },
     {
         "name": "submission_writer",
-        "description": "Write the final formatted CP1 submission draft with all required sections for the StudAI Foundry hackathon",
+        "description": "Generate CP1 Field 5 (Evaluation Logic) and Field 6 (Expected Output), then compile all 6 fields into a copy-paste-ready submission",
     },
 ]
 
@@ -59,7 +59,7 @@ FEEDBACK FROM PREVIOUS ATTEMPT (use this to improve the plan):
 
     prompt = f"""You are a planning engine for an autonomous CP1 submission drafting agent.
 
-GOAL: Help a student team prepare their CP1 (Checkpoint 1) submission for StudAI Foundry hackathon based on this idea.
+GOAL: Generate a complete CP1 submission for StudAI Foundry hackathon. The CP1 form has 6 fields: Problem Statement, Target Users, Autonomy Loop Plan, Tools & APIs, Evaluation Logic, and Expected Output.
 
 PROJECT IDEA: {idea}
 {feedback_section}

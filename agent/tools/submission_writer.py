@@ -1,17 +1,22 @@
 # ============================================================
-# submission_writer.py — Tool 3: Write the CP1 submission draft
+# submission_writer.py — Tool 3: Generate Evaluation Logic + Expected Output
+#                        and compile all 6 CP1 fields
 # ============================================================
 # PURPOSE:
-#   This tool synthesises the problem analysis (Tool 1) and the
-#   solution architecture (Tool 2) into a formatted CP1 checkpoint
-#   submission draft for the StudAI Foundry hackathon.
+#   This tool synthesises the outputs from Tool 1 and Tool 2 and
+#   generates the remaining two CP1 form fields:
+#     Field 5: Evaluation Logic (textarea, min 20 chars)
+#     Field 6: Expected Output (textarea, min 20 chars)
+#
+#   It then compiles ALL 6 fields into a formatted, copy-paste-ready
+#   CP1 submission draft. Each field is clearly labelled so students
+#   can paste directly into the StudAI Foundry submission form.
 #
 # WHY THIS IS ALWAYS THE LAST TOOL (synthesis pattern):
-#   The submission writer needs ALL previous outputs to produce a
-#   complete draft. It's the "assembler" — it takes raw analysis
-#   and architecture, and formats them into a submission-ready
-#   document. In any autonomous agent, the last tool is always
-#   the synthesiser that produces the final user-facing output.
+#   The submission writer needs ALL previous outputs to produce the
+#   final two fields and compile the complete draft. Evaluation logic
+#   can't be written without knowing the autonomy loop plan. Expected
+#   output can't be defined without knowing the problem and solution.
 #
 # HOW TO CUSTOMISE (vibe coding prompt):
 #   "Change submission_writer.py to output a CP2 demo script
@@ -21,58 +26,57 @@
 
 
 def run(idea, problem_analysis, solution_architecture, client, model):
-    """Synthesise all tool outputs into a formatted CP1 submission draft."""
+    """Generate Evaluation Logic, Expected Output, and compile all 6 CP1 fields."""
 
     # ── BUILD THE PROMPT ─────────────────────────────────────────
-    prompt = f"""You are helping a student team write their CP1 (Checkpoint 1) submission for StudAI Foundry — India's national autonomous AI systems hackathon.
+    prompt = f"""You are helping a student team complete their CP1 (Checkpoint 1) submission for StudAI Foundry — India's national autonomous AI hackathon.
 
-Using the problem analysis and solution architecture below, write a complete CP1 submission draft.
+Previous tools have already generated Fields 1-4. Now generate Fields 5-6 and compile ALL fields into the final submission.
 
 PROJECT IDEA: {idea}
 
-PROBLEM ANALYSIS:
+FIELDS 1-2 (from problem_definer):
 {problem_analysis}
 
-SOLUTION ARCHITECTURE:
+FIELDS 3-4 (from solution_architect):
 {solution_architecture}
 
-Write the submission using these EXACT sections and markdown headers:
+YOUR TASK — Generate Fields 5-6 and compile the complete submission:
 
-## StudAI Foundry — CP1 Submission
+Write the output using these EXACT headers. Each field must be clearly separated so students can copy-paste into the form.
 
-### Team's Project Title
-(Create a compelling, specific title — not generic)
+---
 
-### Problem Statement
-(3-4 sentences: Who has the problem, what exactly the problem is, why it matters NOW. Must be specific, not generic.)
+## CP1 SUBMISSION — COPY-PASTE READY
 
-### Proposed Solution
-(3-4 sentences: What the product does, how the user interacts with it, what the output looks like. Be concrete.)
+### FIELD 1 — Problem Statement
+(Extract and clean up the problem statement from the analysis above. Must be at least 50 characters. 3-5 clear sentences answering: "What problem does your AI agent solve?")
 
-### How Autonomy Works in This Product
-(Explain the THINK → PLAN → EXECUTE → REVIEW → UPDATE cycle for THIS specific product. What does each step do? Why is this an autonomous agent and not a chatbot? This section is critical for the judges.)
+### FIELD 2 — Target Users
+(Extract and clean up the target users from the analysis above. Must be at least 10 characters. One specific sentence answering: "Who will use this?")
 
-### Target Users
-(Specific user segment with demographics — not "everyone" or "students")
+### FIELD 3 — Autonomy Loop Plan
+(Extract and clean up the autonomy loop plan from the analysis above. Must be at least 50 characters. Describes how the AI agent operates autonomously through THINK → PLAN → EXECUTE → REVIEW → UPDATE.)
 
-### Tech Stack
-(Table or list: LLM provider, UI framework, key libraries, external APIs)
+### FIELD 4 — Tools & APIs
+(Extract the tools list from the analysis above. Comma-separated. Example format: "Groq API, Streamlit, Python, python-dotenv")
 
-### Agent Tools
-(List each tool the agent uses with a one-line description)
+### FIELD 5 — Evaluation Logic
+(NEW — generate this now. How will you measure if the agent's output is successful? What metrics or criteria does the REVIEW step check? Be specific to THIS product. Must be at least 20 characters. 2-3 sentences. Example: "The agent scores its output on 3 criteria: accuracy of syllabus coverage (>80%), difficulty progression alignment, and time feasibility for the student's schedule. A combined score of 7/10 or higher passes quality review.")
 
-### 10-Day Build Plan
-(Day-by-day or phase-by-phase plan. Must be realistic for students with 3-4 hours/day.)
+### FIELD 6 — Expected Output
+(NEW — generate this now. What does a successful output from this agent look like? Describe the concrete deliverable the user receives. Must be at least 20 characters. 2-3 sentences. Example: "A personalised 7-day study plan with daily 15-minute micro-lessons, 3 practice questions per topic, and priority ranking of weak areas — delivered as a formatted message via WhatsApp.")
 
-### Why This Idea Will Win
-(2-3 sentences: What makes this stand out from other submissions? What's the unfair advantage?)
+---
 
-Keep it under 500 words. Be direct, specific, and compelling. Judges read 100+ submissions — make it impossible to skim past.
-No filler. No generic statements. Every sentence should carry weight."""
+IMPORTANT RULES:
+- Each field must meet its minimum character length
+- Fields must be directly copy-pasteable into the StudAI Foundry submission form
+- Be specific to THIS project — no generic statements
+- Every sentence must carry weight — judges read 100+ submissions
+- Keep the total under 500 words"""
 
     # ── CALL THE LLM ─────────────────────────────────────────────
-    # Why temperature 0.4: submissions need personality and punch
-    # but must stay grounded in the actual analysis
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],

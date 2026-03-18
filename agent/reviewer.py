@@ -1,80 +1,75 @@
 # ============================================================
-# reviewer.py — Scores output and decides pass or retry
+# reviewer.py — Scores CP1 draft against the 6-field rubric
 # ============================================================
 # PURPOSE:
 #   The reviewer is what makes this an AUTONOMOUS agent instead of
-#   a chatbot. A chatbot returns whatever the LLM generates. An
-#   autonomous agent JUDGES its own output, scores it, and decides
-#   whether it's good enough — or whether to try again with
-#   specific feedback about what to improve.
+#   a chatbot. It scores the CP1 draft against the actual 6-field
+#   form requirements and decides pass or retry.
 #
-# WHY THIS MATTERS:
-#   Without a reviewer, the agent is just a pipeline. With a
-#   reviewer, the agent has a quality gate — it can self-correct.
-#   This is the core concept students learn in the workshop:
-#   autonomy = planning + execution + SELF-EVALUATION.
-#
-# CP1 RUBRIC:
-#   The reviewer scores against StudAI Foundry's actual CP1
-#   criteria — not generic quality. This ensures the submission
-#   draft meets the hackathon's specific requirements.
+# CP1 FORM FIELDS IT CHECKS:
+#   Field 1: Problem Statement   (min 50 chars, specific pain point)
+#   Field 2: Target Users        (min 10 chars, specific segment)
+#   Field 3: Autonomy Loop Plan  (min 50 chars, maps THINK/PLAN/EXECUTE/REVIEW/UPDATE)
+#   Field 4: Tools & APIs        (comma-separated, realistic stack)
+#   Field 5: Evaluation Logic    (min 20 chars, measurable criteria)
+#   Field 6: Expected Output     (min 20 chars, concrete deliverable)
 #
 # HOW TO CUSTOMISE (vibe coding prompt):
 #   "Make the reviewer stricter — require score 9 to pass instead
-#    of 7. Update the scoring criteria to match CP2 requirements
-#    (working demo, user testing results, iteration evidence)."
+#    of 7. Check that the Autonomy Loop Plan mentions all 5 steps
+#    explicitly (THINK, PLAN, EXECUTE, REVIEW, UPDATE)."
 # ============================================================
 
 import json
 
 # ── PASS THRESHOLD ───────────────────────────────────────────────
-# Why this is a named constant: students can change this one number
-# to make the agent stricter (higher) or more lenient (lower).
 # Score 7+ = pass. Below 7 = the agent retries with feedback.
 PASS_THRESHOLD = 7
 
 
 def evaluate(idea, results, client, model):
-    """Score the agent's CP1 draft and decide whether to pass or retry."""
+    """Score the CP1 draft against the 6-field rubric."""
 
     # ── BUILD THE PROMPT ─────────────────────────────────────────
-    prompt = f"""You are a quality reviewer for a CP1 submission drafting agent at StudAI Foundry — India's national autonomous AI hackathon.
+    prompt = f"""You are a quality reviewer for a CP1 submission drafting agent at StudAI Foundry.
 
-Review the CP1 submission draft below and score it on a scale of 1-10.
+The CP1 form has exactly 6 fields. Review the draft below and check each field.
 
 ORIGINAL IDEA: {idea}
 
-CP1 SUBMISSION DRAFT:
-{results.get("submission_writer", "No submission draft generated")}
+CP1 DRAFT:
+{results.get("submission_writer", "No draft generated")}
 
-SOLUTION ARCHITECTURE:
-{results.get("solution_architect", "No solution architecture generated")}
+CHECK EACH OF THESE 6 FIELDS:
 
-SCORING CRITERIA — based on what Foundry judges look for in CP1:
-  9-10: Specific problem with evidence, concrete solution with autonomy angle clearly explained,
-        realistic tech stack, actionable 10-day build plan, compelling "why this will win" section
-  7-8:  All required sections present, mostly specific but some gaps in detail or autonomy explanation
-  5-6:  Generic problem/solution that could apply to any project, weak autonomy angle, vague build plan
-  1-4:  Missing required sections, no autonomy explanation, unrealistic scope, or too short
+1. Problem Statement (min 50 chars): Is it specific? Does it describe a real pain point, not a generic statement? Would a judge understand exactly what problem is being solved?
 
-KEY THINGS TO CHECK:
-  - Is the problem statement SPECIFIC (not "students struggle with learning")?
-  - Does the autonomy section explain THINK/PLAN/EXECUTE/REVIEW/UPDATE for THIS product?
-  - Is the build plan realistic for students with 3-4 hours/day?
-  - Would a judge understand exactly what this product does after reading?
+2. Target Users (min 10 chars): Is the user segment specific (not "everyone" or "students")? Are demographics/context included?
+
+3. Autonomy Loop Plan (min 50 chars): Does it map all 5 steps (THINK, PLAN, EXECUTE, REVIEW, UPDATE) to THIS specific product? Is it clear why this is autonomous and not a chatbot?
+
+4. Tools & APIs: Are they listed comma-separated? Are they realistic for a student team? Do they include an LLM provider?
+
+5. Evaluation Logic (min 20 chars): Does it explain HOW the agent measures success? Are there specific metrics or criteria?
+
+6. Expected Output (min 20 chars): Does it describe a concrete deliverable the user receives? Can you picture exactly what the output looks like?
+
+SCORING:
+  9-10: All 6 fields present, specific, meets min lengths, autonomy clearly mapped, copy-paste ready
+  7-8:  All fields present, mostly specific, minor gaps in one or two fields
+  5-6:  Some fields generic or too short, autonomy explanation vague
+  1-4:  Missing fields, too short to meet minimums, or generic filler
 
 Return ONLY valid JSON — no markdown, no explanation, no extra text.
 Use this exact format:
-{{"score": 8, "passed": true, "what_is_good": "brief summary of strengths", "feedback": "specific improvements needed"}}"""
+{{"score": 8, "passed": true, "what_is_good": "which fields are strong", "feedback": "which specific fields need improvement and how"}}"""
 
     # ── CALL THE LLM ─────────────────────────────────────────────
-    # Why temperature 0.2: review scoring must be consistent and
-    # analytical — we don't want creative interpretation of quality
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2,
-        max_tokens=200,
+        max_tokens=250,
     )
 
     raw = response.choices[0].message.content
@@ -90,9 +85,6 @@ Use this exact format:
     review = json.loads(raw)
 
     # ── ENFORCE THRESHOLD ────────────────────────────────────────
-    # Why we override the LLM's "passed" field: the LLM might say
-    # passed=true for a score of 6. We enforce our own threshold
-    # so the agent's quality gate is deterministic, not probabilistic.
     review["passed"] = review.get("score", 0) >= PASS_THRESHOLD
 
     return review

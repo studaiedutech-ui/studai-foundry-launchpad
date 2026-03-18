@@ -410,10 +410,14 @@ if run_button:
     # ── DISPLAY RESULTS ──────────────────────────────────────────
     st.divider()
 
-    st.markdown("## 📋 Your CP1 Submission Draft")
+    st.markdown("## 📋 Your CP1 Submission — Copy-Paste Ready")
+    st.markdown("Each field below maps to the StudAI Foundry CP1 form. Copy and paste directly.")
 
     if results.get("submission_writer"):
+        # Show the full compiled draft
         st.markdown(results["submission_writer"])
+
+        st.divider()
 
         # ── DOWNLOAD BUTTON ──────────────────────────────────────
         st.download_button(
@@ -423,41 +427,53 @@ if run_button:
             mime="text/markdown",
             use_container_width=True,
         )
+
+        # ── CP1 FORM FIELD REFERENCE ─────────────────────────────
+        st.markdown("---")
+        st.markdown("### 📝 CP1 Form Fields Reference")
+        st.markdown("The 6 fields your submission needs:")
+        st.markdown("""
+| # | Field | Type | Min Length |
+|---|-------|------|-----------|
+| 1 | Problem Statement | Textarea | 50 chars |
+| 2 | Target Users | Input | 10 chars |
+| 3 | Autonomy Loop Plan | Textarea | 50 chars |
+| 4 | Tools & APIs | Input (comma-separated) | 1 char |
+| 5 | Evaluation Logic | Textarea | 20 chars |
+| 6 | Expected Output | Textarea | 20 chars |
+        """)
     else:
         st.warning("No draft was generated. Check the activity log above for errors.")
 
     with st.expander("🔍 Raw tool outputs (for learning)"):
-        st.markdown("**Why look at these?** Each tool produces one piece of the submission. "
-                     "The submission_writer *synthesises* them all. Understanding this chain is "
-                     "key to building your own autonomous agent.")
+        st.markdown("**Why look at these?** Each tool generates specific CP1 fields. "
+                     "The submission_writer compiles them all into the final draft. "
+                     "Understanding this chain is key to building your own autonomous agent.")
         st.markdown("---")
-        st.markdown("### Tool 1: Problem Definition")
+        st.markdown("### Tool 1: Problem Definer (Fields 1-2)")
         st.markdown(results.get("problem_definer", "*Not generated*"))
         st.markdown("---")
-        st.markdown("### Tool 2: Solution Architecture")
+        st.markdown("### Tool 2: Solution Architect (Fields 3-4)")
         st.markdown(results.get("solution_architect", "*Not generated*"))
 
     # ── POST-RUN EDUCATION ───────────────────────────────────────
     with st.expander("🎓 What just happened? (The autonomy explained)"):
         loops_used = current_loop[0]
         st.markdown(f"""
-**The agent ran {loops_used} loop{'s' if loops_used > 1 else ''}** to draft your CP1 submission. Here's what happened at each step:
+**The agent ran {loops_used} loop{'s' if loops_used > 1 else ''}** to draft your CP1 submission. Here's what happened:
 
-1. **THINK** — The agent parsed your idea as its goal. On retries, it also incorporated specific feedback from the reviewer about what to improve.
+1. **THINK** — The agent parsed your idea as its goal. On retries, it incorporated reviewer feedback about which CP1 fields needed improvement.
 
-2. **PLAN** — The agent asked the LLM to create a JSON execution plan: *which tools to run and in what order*. The agent decided its own workflow — you didn't tell it what to do step by step.
+2. **PLAN** — The agent created a JSON plan: run problem_definer first, then solution_architect, then submission_writer. It decided this order itself.
 
-3. **EXECUTE** — The agent ran 3 tools in sequence. Each tool's output became input for the next one (this is called *information chaining*):
-   - **Problem Definer** → extracted target users, pain point, urgency, alternatives
-   - **Solution Architect** → used that analysis to design the solution, tech stack, and build plan
-   - **Submission Writer** → synthesised everything into a formatted CP1 draft
+3. **EXECUTE** — The agent ran 3 tools. Each generates specific CP1 fields:
+   - **Problem Definer** → Field 1 (Problem Statement) + Field 2 (Target Users)
+   - **Solution Architect** → Field 3 (Autonomy Loop Plan) + Field 4 (Tools & APIs)
+   - **Submission Writer** → Field 5 (Evaluation Logic) + Field 6 (Expected Output) + compiled all 6
 
-4. **REVIEW** — **This is the key step.** The agent scored its OWN draft against StudAI Foundry's CP1 criteria. If the score was below 7, it decided the draft wasn't submission-ready. A chatbot would have just returned it. An autonomous agent judges itself.
+4. **REVIEW** — The agent scored its own draft against the 6-field CP1 rubric. It checked: Are all fields present? Do they meet minimum lengths? Is the autonomy plan specific? Is the problem statement concrete?
 
-5. **UPDATE** — If the review failed, the agent extracted specific feedback ("autonomy section is too vague", "build plan is unrealistic") and carried it into the next loop to improve.
+5. **UPDATE** — If score < 7, the agent carried specific feedback like "Field 3 doesn't map all 5 autonomy steps" into the next loop.
 
-**This is the difference between a chatbot and an autonomous agent:**
-A chatbot gives you one draft. An agent gives you its *best* draft — and keeps improving until it meets the quality bar.
-
-**Next step:** Copy this draft, refine it with your team, and submit before the CP1 deadline!
+**Next step:** Copy each field from the draft above, paste into the StudAI Foundry submission form, refine with your team, and submit!
         """)
